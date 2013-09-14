@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link href='css/fullcalendar.css' rel='stylesheet' />
+<link href='css/fullcalendar.print.css' rel='stylesheet' media='print' />
+<link href='css/buttons.css' rel='stylesheet' type='text/css' media='screen, projection' />
+<link href='css/style.css' rel='stylesheet' type='text/css' />
+<link href='css/jquery-ui.css' rel='stylesheet' type='text/css' />
+<script src='contrib/jquery.min.js' type='text/javascript'></script>
+<script src='contrib/jquery-ui.min.js' type='text/javascript'></script>
+<script src='js/rdflib.js' type='text/javascript'></script>
+<script src='js/fullcalendar.min.js' type='text/javascript'></script>
+<script src='js/cal.js' type='text/javascript'></script>
+<script src='js/user.js' type='text/javascript'></script>
+<script>
+// ----- Modify if needed ------
+var proxy_template = "https://rww.io/proxy?uri={uri}";
+
+// ----- DO NOT MODIFY BELOW -------
+// User's WebID
+var mywebid;
+var mygraph;
+// Date
+var date = new Date();
+var d = date.getDate();
+var m = date.getMonth();
+var y = date.getFullYear();
+var dummy_events = [
+			{
+				title: 'All Day Event',
+				start: new Date(y, m, 1),
+				allDay: true
+			},
+			{
+				title: 'Long Event',
+				start: new Date(y, m, d-5),
+				end: new Date(y, m, d-2),
+				color: '#51b749'
+			},
+			{
+				id: 999,
+				title: 'Repeating Event',
+				start: new Date(y, m, d-3, 16, 0),
+				allDay: false
+			},
+			{
+				id: 999,
+				title: 'Repeating Event',
+				start: new Date(y, m, d+4, 16, 0),
+				allDay: false
+			},
+			{
+				title: 'Meeting',
+				start: new Date(y, m, d, 10, 30),
+				allDay: false
+			},
+			{
+				title: 'Lunch',
+				start: new Date(y, m, d, 12, 0),
+				end: new Date(y, m, d, 14, 0),
+				allDay: false
+			},
+			{
+				title: 'Birthday Party',
+				start: new Date(y, m, d+1, 19, 0),
+				end: new Date(y, m, d+1, 22, 30),
+				allDay: false
+			}
+		];
+
+
+// ------------------- UI and initialization ---------------
+$(document).ready(function() {
+    var uri = document.location.origin;
+    new $.ajax({
+        type: 'head',
+        url: uri,
+        success: function(data, textStatus, request) {
+            webid = request.getResponseHeader('User');
+            if ((webid) && (webid.slice(0, 4) == 'http')) {
+                // check if the user is authenticated
+                mywebid = webid;
+                userInfo(webid, "me");
+                // render
+                render(true);
+            } else {
+                // not authenticated -> get user WebID from input
+                render(false);
+            }
+        }
+    });
+});
+</script>
+</head>
+
+<body>
+    <div id="alert" style="display: none;">
+        <div id="alertbody" style="display: inline;"></div>
+    </div>
+    <div id="topnav" class="topnav center">
+        <span class="title" title="Home"><a href="http://rww.io">Linked Data Calendar</a></span>
+        <div id="me" class="login"></div>
+    </div>
+    <div class="container" id="main-container">
+        <div class="content">
+            <div id="calendar"></div>
+        </div>
+    </div>
+    <!-- Event editor -->
+    <div id="editevent" class="editevent" style="display: none;">
+        <div class="left">
+                <span class="span-left cell inline-block"><strong>When</strong></span>
+                <div id="eventdate" class="eventdate left cell inline-block"></div>
+        </div>
+        <div class="editor-spacer">  
+            <span class="span-left cell inline-block">Event name</span>        
+            <div class="left cell inline-block"> <input type="text" name="title" id="title" class="text left" /></div>
+        </div>
+        <div id="duration" class="duration">
+            <div id="timepicker" class="timepicker"></div>
+            <div class="right"><span class="span-right cell inline-block">All day?</span><input type="checkbox" name="allday" id="allDay" class="right" onclick="toggleHours()" /></div>
+        </div>
+        <div class="editor-buttons right">
+            <div class="right actions"><a href="#" class="button button-rounded button-flat-caution" onclick="$('#editevent').hide()"><i class="icon-remove"></i> Cancel</a></div>
+            <div class="right"><a href="#" class="button button-rounded button-flat-primary" onclick="saveEvent()"><i class="icon-save"></i> Save</a></div>
+        </div>
+        
+        <div id="colorpicker" class="colorpicker">
+            <span class="span-left cell inline-block">Pick a color</span>
+            <div class="right inline-block">
+                <div id="Blue" class="Blue" onclick="setColor('#5484ed')"></div>
+                <div id="Red" class="Red" onclick="setColor('#e52127')"></div>
+                <div id="Green" class="Green" onclick="setColor('#51b749')"></div>
+                <div id="Yellow" class="Yellow" onclick="setColor('#fbd75b')"></div>
+                <div id="Purple" class="Purple" onclick="setColor('#dbadff')"></div>
+            </div>
+        </div>
+    </div>
+    
+    
+</body>
+</html>
