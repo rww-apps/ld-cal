@@ -2,57 +2,138 @@
 function clearFields() {
     $('#eventdate').empty();
     $('#title').val('');
+    $('#id').val('');
     $('#allDay').prop('checked', false);
+}
+
+dirname = function(path) {
+    return path.replace(/\\/g, '/').replace(/\/[^\/]*\/?$/, '');
+}
+
+function getCalPath(day, resource) {
+    return window.location.protocol+'//'+
+            window.location.host+
+            dirname(window.location.pathname)+
+            $.fullCalendar.formatDate(day, '/yyyy/MM/')+
+            resource;
 }
 
 
 // Load calendar data from user storage
-function loadRemote () {
-  this.status('Loading cal', true);
-  that = this;
-  var user = window.user;
-  
-  $.getJSON(this.getCalendarURI(window.user) , function(data){
-
-    document.app.eventList = [];
-    for(var prop in data) {
-      if(data.hasOwnProperty(prop)) {
-        if (!data[prop]['http://purl.org/dc/elements/1.1/title']) continue;
-        if (!data[prop]['http://purl.org/NET/c4dm/timeline.owl#start']) continue;
-        if (!data[prop]['http://purl.org/NET/c4dm/timeline.owl#end']) continue;
-        
-        var title = data[prop]['http://purl.org/dc/elements/1.1/title'][0]['value'];
-        var start = data[prop]['http://purl.org/NET/c4dm/timeline.owl#start'][0]['value'];
-        var end = data[prop]['http://purl.org/NET/c4dm/timeline.owl#end'][0]['value'];
-        start = $.fullCalendar.parseISO8601(start);
-        end = $.fullCalendar.parseISO8601(end);
-        
-        if (data[prop]['http://www.w3.org/ns/ui#color']) {
-          var color = data[prop]['http://www.w3.org/ns/ui#color'][0]['value'];
-        } else {
-          color = '#3366CC';
-        }
-        if ( (end.getTime() - start.getTime()) % 86400000 == 0 ) {
-          var allDay = true;
-        } else {
-          var allDay = false;
-        }
-        var event = {"start" : start, "end": end, "title": title, "color" : color, "id" : prop, "allDay" : allDay };
-        document.app.eventList.push( event );
-      }
-    }
-
-    that.render();
-    that.status('Loading cal', false);
-  }).error(function(data){
-    that.status('Loading cal', false);
-  });
-}
+var calEvents = [];
+function loadRemote (webid, eventsURI) {
+    $('#spinner').show();
     
+    var g = $rdf.graph();
+    var f = $rdf.fetcher(g);
+    // add CORS proxy
+    $rdf.Fetcher.crossSiteProxyTemplate="https://example.com/proxy?uri={uri}";
+    
+    // fetch user data
+    f.nowOrWhenFetched(eventsURI,undefined,function(){
+        // get all event IDs
+        t = g;
+        var evs = g.statementsMatching(undefined, $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), undefined, $rdf.sym(eventsURI));
+        for (var e in evs) {
+            var ev = g.statementsMatching(evs[e]['subject']);
+            
+            var EVENTS  = $rdf.Namespace('http://purl.org/NET/c4dm/event.owl#');
+            var TIME = $rdf.Namespace('http://purl.org/NET/c4dm/timeline.owl#');
+            var DC = $rdf.Namespace('http://purl.org/dc/elements/1.1/');
+            var FOAF = $rdf.Namespace('http://xmlns.com/foaf/0.1/');
+            var UI = $rdf.Namespace('http://www.w3.org/ns/ui#');
+
+            var id = evs[e]['subject']['value'];
+            var start = g.anyStatementMatching(evs[e]['subject'], TIME('start'));
+            var end = g.anyStatementMatching(evs[e]['subject'], TIME('end'));
+            var allDay = g.anyStatementMatching(evs[e]['subject'], TIME('allDay'));
+            var title = g.anyStatementMatching(evs[e]['subject'], DC('title'));
+            var color = g.anyStatementMatching(evs[e]['subject'], UI('color'));
+            var maker = g.anyStatementMatching(evs[e]['subject'], FOAF('maker'));
+
+            var event = {
+                id: id,
+                start: (start)?$.fullCalendar.parseISO8601(start['object']['value']):undefined,
+                end: (end)?$.fullCalendar.parseISO8601(end['object']['value']):undefined,
+                allDay: (allDay)?true:false,
+                title: (title)?title['object']['value']:undefined,
+                color: (color)?color['object']['value']:undefined,
+                maker: (maker)?maker['object']['value']:undefined
+            };
+            calEvents.push(event);
+        }
+        
+    /*
+        var query = "PREFIX event: <http://purl.org/NET/c4dm/event.owl#> \n"+
+            "PREFIX timeline: <http://purl.org/NET/c4dm/timeline.owl#> \n"+
+            "PREFIX dc: <http://purl.org/dc/elements/1.1/> \n"+
+            "PREFIX foaf: <http://xmlns.com/foaf/0.1/> \n"+
+            "PREFIX ui: <http://www.w3.org/ns/ui#> \n"+
+            "SELECT * \n"+
+            "WHERE {\n"+
+            "  ?e a event:Event . \n"+
+            "  OPTIONAL { ?e timeline:start ?start . } \n"+
+            "  OPTIONAL { ?e timeline:end ?end . } \n"+
+            "  OPTIONAL { ?e timeline:allDay ?allday . } \n"+
+            "  OPTIONAL { ?e dc:title ?title . } \n"+
+            "  OPTIONAL { ?e ui:color ?color . } \n"+
+            "  OPTIONAL { ?e foaf:maker ?maker . } \n"+
+            "}";
+
+        var eq = $rdf.SPARQLToQuery(query,false,g)
+        var onresult = function(r) {
+            var event = {
+                id: r['?e']['value'],
+                start: (r['?start'])?$.fullCalendar.parseISO8601(r['?start']['value']):undefined,
+                end: (r['?end'])?$.fullCalendar.parseISO8601(r['?end']['value']):undefined,
+                allDay: (r['?allday'])?true:false,
+                title: (r['?title'])?r['?title']['value']:undefined,
+                color: (r['?color'])?r['?color']['value']:undefined,
+                maker: (r['?maker'])?r['?maker']['value']:undefined
+            };
+            console.log(event);
+            calEvents.push(event);
+        }
+        
+        g.query(eq,onresult,undefined,undefined);
+   */
+        render(calEvents)
+    });
+    $('#spinner').hide();
+}
+
+function putRemote(uri, data) {
+    $.ajax({
+        type: "PUT",
+        url: uri,
+        contentType: "text/turtle",
+        data: data,
+        processData: false,
+        statusCode: {
+            200: function() {
+                console.log("200 Success");
+            },
+            401: function() {
+                console.log("401 Unauthorized");
+            },
+            403: function() {
+                console.log("403 Forbidden");
+            },
+            406: function() {
+                console.log("406 Contet-type unacceptable");
+            },
+            507: function() {
+                console.log("507 Insufficient storage");
+            },
+        }
+    });
+}
+
 // Save calendar data to user storage
-function saveEvent () {  
+function saveEvent (path) {  
     // DEBUG
     console.log(mywebid);
+    console.log('id='+$('#id').val());
     console.log('allDay='+$('#allDay').prop('checked'));
     console.log('startDay='+$('#startDayVal').val());
     console.log('endDay='+$('#endDayVal').val());
@@ -60,80 +141,100 @@ function saveEvent () {
     console.log('endHour='+$('#endHour').val());
     console.log('title='+$('#title').val());
     console.log('color='+$('#checkedImg').attr('alt'));
-
+    // end DEBUG
+    var id = $('#id').val();
     var title = $('#title').val();    
     var color = $('#checkedImg').attr('alt');
     var allDay = $('#allDay').prop('checked');
 
-    var startHour = (parseInt($('#startHour').val().slice(0,2)) * 60) + parseInt($('#startHour').val().slice(-2));
-    var endHour   = (parseInt($('#endHour').val().slice(0,2)) * 60) + parseInt($('#endHour').val().slice(-2));
+    var startHour = (parseInt($('#startHour').val().slice(0,2)) * 60)+
+                        parseInt($('#startHour').val().slice(-2));
+    var endHour   = (parseInt($('#endHour').val().slice(0,2)) * 60)+
+                        parseInt($('#endHour').val().slice(-2));
     var startDay = parseInt($('#startDayVal').val());
-    startDay = new Date(startDay + startHour).toISOString();
+    startDay = new Date(startDay + startHour);
     var endDay = parseInt($('#endDayVal').val());
     if (endDay) {
-        endDay = new Date(endDay + endHour).toISOString();
+        endDay = new Date(endDay + endHour);
         console.log(endDay);
     }
     console.log(startDay);
+
+    // prepare the ID
+    var blob = title+color+allDay+startHour+endHour+startDay+endDay;
+    id = (id)?id:'#'+hex_sha1(blob);
+    
+    // prepare the resource URI
+    if (!path)
+        path = getCalPath(startDay, 'events');
+
+    console.log('path='+path);
+    
     // save the data in a graph
-//    var id = this.getCalendarURI(mywebid) + '#';
     g = $rdf.graph();
-    var frag = '#event';
-    // add this triple to the user's profile
-    g.add($rdf.sym(frag),
+
+    // set triples
+    g.add($rdf.sym(id),
+            $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+            $rdf.sym('http://purl.org/NET/c4dm/event.owl#Event'));
+    g.add($rdf.sym(id),
             $rdf.sym('http://purl.org/NET/c4dm/timeline.owl#start'),
-            $rdf.lit(startDay));
-    // add these triples to the profile document
+            $rdf.lit(startDay.toISOString(), '', $rdf.Symbol.prototype.XSDdateTime));
     if (endDay) {
-        g.add($rdf.sym(frag),
+        g.add($rdf.sym(id),
                 $rdf.sym('http://purl.org/NET/c4dm/timeline.owl#end'),
-                $rdf.lit(endDay));
+                $rdf.lit(endDay.toISOString(), '', $rdf.Symbol.prototype.XSDdateTime));
     }
     if (allDay) {
-        g.add($rdf.sym(frag),
+        g.add($rdf.sym(id),
             $rdf.sym('http://purl.org/NET/c4dm/timeline.owl#allDay'),
             $rdf.lit(allDay));
     }
-    g.add($rdf.sym(frag),
+    g.add($rdf.sym(id),
             $rdf.sym('http://purl.org/dc/elements/1.1/title'),
             $rdf.lit(title));
-    g.add($rdf.sym(frag),
+    g.add($rdf.sym(id),
             $rdf.sym('http://www.w3.org/ns/ui#color'),
             $rdf.lit(color));
-    g.add($rdf.sym(frag),
+    g.add($rdf.sym(id),
             $rdf.sym('http://xmlns.com/foaf/0.1/maker'),
             $rdf.sym(mywebid));
     var data = new $rdf.Serializer(g).toN3(g);
     console.log(data);
-        
+    // finally write the data remotely
+    putRemote(path, data);
 
-    /*    
-    // TODO work out why this is sometimes null
+    $('#editevent').hide();
+}
 
-    var event = { "http://purl.org/NET/c4dm/timeline.owl#start" : [ { "value" : start, "type" : "literal" } ],
-                  "http://purl.org/NET/c4dm/timeline.owl#end" : [ { "value" : end, "type" : "literal" } ],  
-                  "http://purl.org/dc/elements/1.1/title" : [ { "value" : title, "type" : "literal" }]  , 
-                  "http://www.w3.org/ns/ui#color" : [ { "value" : color, "type" : "literal" }],
-                  "http://xmlns.com/foaf/0.1/maker" : [ { "value" : window.user, "type" : "uri" }],  
-                  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : [ { "value" : "http://purl.org/NET/c4dm/event.owl#Event", "type" : "uri" }]   
-                };
-    var id = this.getCalendarURI(user) + '#' + hex_sha1(JSON.stringify(jsonld.normalize(event)));
-    body[""+id] = event;
-
-     
-  this.postFile(this.getCalendarURI(user), JSON.stringify(body));      
-  this.status('Saving calendar...', false);
-  */
-  $('#editevent').hide();
+function deleteEvent() {
+    var id = $('#id').val();
+    console.log(id);
+    // remove event from display
+    $('#calendar').fullCalendar('removeEvents', [id]);
+    // remove event from events
+    for (var event in calEvents) {
+        if (calEvents[event]._id == id)
+            delete calEvents[event];
+    }
+    // update remotely
+    put
+    
+    // hide UI
+    $('#editevent').hide()
+    console.log(calEvents);
+    return true;
 }
 
 // ----- RENDER -------
-function render(authd) {
+function render(events) {
+/*
     if (authd)
         var events = dummy_events;
     else
         var events = [];
-        
+*/
+    
 	var calendar = $('#calendar').fullCalendar({
 		header: {
 			left: 'prev,next today',
@@ -144,7 +245,9 @@ function render(authd) {
 		selectHelper: true,
         eventClick: function(calEvent, jsEvent, view) {
             clearFields();
-
+            
+            $('#id').val(calEvent.id);
+            
             var startDay = $.fullCalendar.formatDate(calEvent.start, 'ddd, MMMM dd yyyy');
             var endDay = $.fullCalendar.formatDate(calEvent.end, 'ddd, MMMM dd yyyy');
             if (calEvent.end && startDay != endDay)
@@ -196,7 +299,8 @@ function render(authd) {
                             '<input type="hidden" id="endDayVal" value="'+end.getTime()+'" />';
 //                            '<input type="hidden" id="endDayVal" value="'+$.fullCalendar.formatDate(end, 'yyyy-MM-dd')+'" />';
             else
-                var period = '<div id="startDay" class="right">'+start.getTime()+'</div>';
+                var period = '<div id="startDay" class="right">'+startDay+'</div>'+
+                            '<input type="hidden" id="startDayVal" value="'+start.getTime()+'" />';
             $('#eventdate').html(period);
 
             // time
