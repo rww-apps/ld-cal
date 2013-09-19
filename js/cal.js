@@ -10,20 +10,21 @@ dirname = function(path) {
     return path.replace(/\\/g, '/').replace(/\/[^\/]*\/?$/, '');
 }
 
-function getCalPath(day, resource) {
-    return window.location.protocol+'//'+
+// build the full path up to the calendar resource
+// granularity: year/month/day/
+function getCalPath(day, granularity, resource) {
+    var path = window.location.protocol+'//'+
             window.location.host+
-            dirname(window.location.pathname)+
-            $.fullCalendar.formatDate(day, '/yyyy/MM/')+
-            resource;
+            dirname(window.location.pathname);
+
+    path += (granularity)?$.fullCalendar.formatDate(day, granularity)+resource:'/'+resource;
+    
+    return path;
 }
 
-
 // Load calendar data from user storage
-var calEvents = [];
-function loadRemote (webid, eventsURI) {
-    $('#spinner').show();
-    
+var calEvents = []; // store all events
+function loadRemote(eventsURI) {
     var g = $rdf.graph();
     var f = $rdf.fetcher(g);
     // add CORS proxy
@@ -31,12 +32,17 @@ function loadRemote (webid, eventsURI) {
     
     // fetch user data
     f.nowOrWhenFetched(eventsURI,undefined,function(){
+        $('#spinner').show();
         // get all event IDs
         t = g;
-        var evs = g.statementsMatching(undefined, $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), undefined, $rdf.sym(eventsURI));
+        var evs = g.statementsMatching(undefined, 
+                    $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), 
+                    undefined, 
+                    $rdf.sym(eventsURI));
+
         for (var e in evs) {
             var ev = g.statementsMatching(evs[e]['subject']);
-            
+            console.log(e);
             var EVENTS  = $rdf.Namespace('http://purl.org/NET/c4dm/event.owl#');
             var TIME = $rdf.Namespace('http://purl.org/NET/c4dm/timeline.owl#');
             var DC = $rdf.Namespace('http://purl.org/dc/elements/1.1/');
@@ -45,14 +51,14 @@ function loadRemote (webid, eventsURI) {
 
             var id = evs[e]['subject']['value'];
             var start = g.anyStatementMatching(evs[e]['subject'], TIME('start'));
-            var end = g.anyStatementMatching(evs[e]['subject'], TIME('end'));
-            var allDay = g.anyStatementMatching(evs[e]['subject'], TIME('allDay'));
+            var end = g.anyStatementMatching(evs[e]['subject'], TIME('end'))
             var title = g.anyStatementMatching(evs[e]['subject'], DC('title'));
             var color = g.anyStatementMatching(evs[e]['subject'], UI('color'));
             var maker = g.anyStatementMatching(evs[e]['subject'], FOAF('maker'));
+            var allDay = g.anyStatementMatching(evs[e]['subject'], TIME('allDay'))
 
             var event = {
-                id: id,
+                id: id.slice(id.indexOf('#'), id.length),
                 start: (start)?$.fullCalendar.parseISO8601(start['object']['value']):undefined,
                 end: (end)?$.fullCalendar.parseISO8601(end['object']['value']):undefined,
                 allDay: (allDay)?true:false,
@@ -60,6 +66,7 @@ function loadRemote (webid, eventsURI) {
                 color: (color)?color['object']['value']:undefined,
                 maker: (maker)?maker['object']['value']:undefined
             };
+            console.log(event);
             calEvents.push(event);
         }
         
@@ -97,9 +104,9 @@ function loadRemote (webid, eventsURI) {
         
         g.query(eq,onresult,undefined,undefined);
    */
-        render(calEvents)
+        render(calEvents);
+        $('#spinner').hide();
     });
-    $('#spinner').hide();
 }
 
 function putRemote(uri, data) {
@@ -130,8 +137,11 @@ function putRemote(uri, data) {
 }
 
 // Save calendar data to user storage
-function saveEvent (path) {  
+function saveEvent (path) {
+    $('#editevent').hide(); 
+    $('#spinner').show();
     // DEBUG
+    /*
     console.log(mywebid);
     console.log('id='+$('#id').val());
     console.log('allDay='+$('#allDay').prop('checked'));
@@ -141,70 +151,158 @@ function saveEvent (path) {
     console.log('endHour='+$('#endHour').val());
     console.log('title='+$('#title').val());
     console.log('color='+$('#checkedImg').attr('alt'));
+    */
     // end DEBUG
     var id = $('#id').val();
     var title = $('#title').val();    
     var color = $('#checkedImg').attr('alt');
     var allDay = $('#allDay').prop('checked');
 
-    var startHour = (parseInt($('#startHour').val().slice(0,2)) * 60)+
+    var startHour = (parseInt($('#startHour').val().slice(0,2)) * 3600000)+
                         parseInt($('#startHour').val().slice(-2));
-    var endHour   = (parseInt($('#endHour').val().slice(0,2)) * 60)+
+    var endHour   = (parseInt($('#endHour').val().slice(0,2)) * 3600000)+
                         parseInt($('#endHour').val().slice(-2));
-    var startDay = parseInt($('#startDayVal').val());
-    startDay = new Date(startDay + startHour);
+    var startDay = parseInt($('#startDayVal').val()) + parseInt(startHour);
+    startDay = new Date(parseInt(startDay));
+
     var endDay = parseInt($('#endDayVal').val());
     if (endDay) {
         endDay = new Date(endDay + endHour);
         console.log(endDay);
     }
-    console.log(startDay);
 
     // prepare the ID
-    var blob = title+color+allDay+startHour+endHour+startDay+endDay;
-    id = (id)?id:'#'+hex_sha1(blob);
+    var exists = false;
+    if (id) {
+        exists = true;
+    } else {
+        var blob = title+color+allDay+startHour+endHour+startDay+endDay;
+        id = '#'+hex_sha1(blob);
+    }
     
+    var event = {
+            id: id,
+            start: (startDay)?startDay:undefined,
+            end: (endDay)?endDay:undefined,
+            allDay: allDay,
+            title: (title)?title:undefined,
+            color: (color)?color:undefined,
+            maker: (mywebid)?mywebid:undefined
+        };
+    console.log(event);
+    // save event locally
+    
+    if (exists) { // update by removing existing event
+        for (var i in calEvents) {
+            if (calEvents[i].id == id)
+                calEvents.splice(i, 1);
+        }
+    }
+    // add event to array
+    calEvents.push(event);    
+    
+    // transform to RDF so we can save remotely
+    var data = eventsToRDF();
+
     // prepare the resource URI
     if (!path)
-        path = getCalPath(startDay, 'events');
+        path = getCalPath(startDay, undefined, 'events'); 
+    // finally write the data remotely
+    putRemote(path, data);
 
-    console.log('path='+path);
-    
+    console.log(path);
+    console.log(data);
+
+    // redraw the calendar
+    $('#calendar').empty();
+    render(calEvents);
+    $('#spinner').hide();
+}
+
+function eventsToRDF() {
+    var RDF = $rdf.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+    var EVENTS  = $rdf.Namespace('http://purl.org/NET/c4dm/event.owl#');
+    var TIME = $rdf.Namespace('http://purl.org/NET/c4dm/timeline.owl#');
+    var DC = $rdf.Namespace('http://purl.org/dc/elements/1.1/');
+    var FOAF = $rdf.Namespace('http://xmlns.com/foaf/0.1/');
+    var UI = $rdf.Namespace('http://www.w3.org/ns/ui#');
+    // save the data in a graph
+    g = $rdf.graph();
+
+    for (var i in calEvents) {
+        var event = calEvents[i];     
+        
+        // set triples
+        g.add($rdf.sym(event['id']),
+                RDF('type'),
+                EVENTS('Event'));
+        g.add($rdf.sym(event['id']),
+                TIME('start'),
+                $rdf.lit(event['start'].toISOString(), '', $rdf.Symbol.prototype.XSDdateTime));
+        if (event['end']) {
+            g.add($rdf.sym(event['id']),
+                    TIME('end'),
+                    $rdf.lit(event['end'].toISOString(), '', $rdf.Symbol.prototype.XSDdateTime));
+        }
+        if (event['allDay']) {
+            g.add($rdf.sym(event['id']),
+                TIME('allDay'),
+                $rdf.lit(event['allDay']));
+        }
+        g.add($rdf.sym(event['id']),
+                DC('title'),
+                $rdf.lit(event['title']));
+        g.add($rdf.sym(event['id']),
+                UI('color'),
+                $rdf.lit(event['color']));
+        g.add($rdf.sym(event['id']),
+                FOAF('maker'),
+                $rdf.sym(event['maker']));
+    }
+    console.log(g);
+    return new $rdf.Serializer(g).toN3(g);
+}
+
+
+function eventToRDF(id, title, color, allDay, startDay, endDay) {
+    var RDF = $rdf.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+    var EVENTS  = $rdf.Namespace('http://purl.org/NET/c4dm/event.owl#');
+    var TIME = $rdf.Namespace('http://purl.org/NET/c4dm/timeline.owl#');
+    var DC = $rdf.Namespace('http://purl.org/dc/elements/1.1/');
+    var FOAF = $rdf.Namespace('http://xmlns.com/foaf/0.1/');
+    var UI = $rdf.Namespace('http://www.w3.org/ns/ui#');
     // save the data in a graph
     g = $rdf.graph();
 
     // set triples
     g.add($rdf.sym(id),
-            $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-            $rdf.sym('http://purl.org/NET/c4dm/event.owl#Event'));
+            RDF('type'),
+            EVENTS('Event'));
     g.add($rdf.sym(id),
-            $rdf.sym('http://purl.org/NET/c4dm/timeline.owl#start'),
+            TIME('start'),
             $rdf.lit(startDay.toISOString(), '', $rdf.Symbol.prototype.XSDdateTime));
     if (endDay) {
         g.add($rdf.sym(id),
-                $rdf.sym('http://purl.org/NET/c4dm/timeline.owl#end'),
+                TIME('end'),
                 $rdf.lit(endDay.toISOString(), '', $rdf.Symbol.prototype.XSDdateTime));
     }
     if (allDay) {
         g.add($rdf.sym(id),
-            $rdf.sym('http://purl.org/NET/c4dm/timeline.owl#allDay'),
+            TIME('allDay'),
             $rdf.lit(allDay));
     }
     g.add($rdf.sym(id),
-            $rdf.sym('http://purl.org/dc/elements/1.1/title'),
+            DC('title'),
             $rdf.lit(title));
     g.add($rdf.sym(id),
-            $rdf.sym('http://www.w3.org/ns/ui#color'),
+            UI('color'),
             $rdf.lit(color));
     g.add($rdf.sym(id),
-            $rdf.sym('http://xmlns.com/foaf/0.1/maker'),
+            FOAF('maker'),
             $rdf.sym(mywebid));
     var data = new $rdf.Serializer(g).toN3(g);
-    console.log(data);
-    // finally write the data remotely
-    putRemote(path, data);
 
-    $('#editevent').hide();
+    return data;
 }
 
 function deleteEvent() {
@@ -214,11 +312,11 @@ function deleteEvent() {
     $('#calendar').fullCalendar('removeEvents', [id]);
     // remove event from events
     for (var event in calEvents) {
-        if (calEvents[event]._id == id)
-            delete calEvents[event];
+        if (calEvents[event].id == id)
+            calEvents.splice(event, 1);
     }
     // update remotely
-    put
+
     
     // hide UI
     $('#editevent').hide()
@@ -245,19 +343,18 @@ function render(events) {
 		selectHelper: true,
         eventClick: function(calEvent, jsEvent, view) {
             clearFields();
-            
             $('#id').val(calEvent.id);
             
             var startDay = $.fullCalendar.formatDate(calEvent.start, 'ddd, MMMM dd yyyy');
             var endDay = $.fullCalendar.formatDate(calEvent.end, 'ddd, MMMM dd yyyy');
             if (calEvent.end && startDay != endDay)
                 var period = '<div id="startDay" class="right">'+startDay+' to</div>'+
-                            '<input type="hidden" id="startDayVal" value="'+calEvent.start.getTime()+'" />'+
+                            '<input type="hidden" id="startDayVal" value="'+$.fullCalendar.parseDate(startDay).getTime()+'" />'+
                             '<div id="endDay">'+endDay+'</div>'+
-                            '<input type="hidden" id="endDayVal" value="'+calEvent.end.getTime()+'" />';
+                            '<input type="hidden" id="endDayVal" value="'+$.fullCalendar.parseDate(endDay).getTime()+'" />';
             else
                 var period = '<div id="startDay" class="right">'+startDay+'</div>'+
-                            '<input type="hidden" id="startDayVal" value="'+calEvent.start.getTime()+'" />';
+                            '<input type="hidden" id="startDayVal" value="'+$.fullCalendar.parseDate(startDay).getTime()+'" />';
             $('#eventdate').html(period);
             $('#title').val(calEvent.title);
             setColor(calEvent.color);
@@ -274,7 +371,7 @@ function render(events) {
             }
             
             $('#timepicker').html('');
-            $('#timepicker').append('<span class="span-left cell inline-block">Event starts</span>'+
+            $('#timepicker').append('<span class="span-left cell inline-block">Event time</span>'+
                             '<div class="left cell inline-block">'+timeSelector('startHour', startHour)+'</div>');
             $('#timepicker').append('<div class="left cell inline-block">'+timeSelector('endHour', endHour)+'</div>');
 
@@ -286,6 +383,7 @@ function render(events) {
 
             // show editor
             showEditor(jsEvent);
+            $('#title').focus();
 		},
 		select: function(start, end, allDay, jsEvent) {
 		    clearFields();
@@ -313,7 +411,7 @@ function render(events) {
             }
                         
             $('#timepicker').html('');
-            $('#timepicker').append('<span class="span-left cell inline-block">Event duration</span>'+
+            $('#timepicker').append('<span class="span-left cell inline-block">Event time</span>'+
                             '<div class="left cell inline-block">'+timeSelector('startHour', startHour)+'</div>');
             $('#timepicker').append('<div class="left cell inline-block">'+timeSelector('endHour', endHour)+'</div>');
 
@@ -324,6 +422,7 @@ function render(events) {
             }
 
             showEditor(jsEvent);
+            $('#title').focus();
 		},
 		editable: true,
         events: events
@@ -366,8 +465,8 @@ function timeSelector (id, defValue) {
         for (j=0; j<2; j++) {
             var m = (j == 0)?'00':'30';
             var txt = i+':'+m;
-            var selected = txt == defValue ? ' selected="selected"' : '';
-            html += '<option value="'+i+':'+m+'" '+selected+'>'+txt+'</option>';
+            var selected = (txt == defValue)?' selected="selected"' : '';
+            html += '<option value="'+txt+'" '+selected+'>'+txt+'</option>';
         }
     }
     html += "</select>";
