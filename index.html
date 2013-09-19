@@ -8,7 +8,7 @@
 <link href='css/jquery-ui.css' rel='stylesheet' type='text/css' />
 <script src='contrib/jquery.min.js' type='text/javascript'></script>
 <script src='contrib/jquery-ui.min.js' type='text/javascript'></script>
-<script src='contrib/fullcalendar.min.js' type='text/javascript'></script>
+<script src='contrib/fullcalendar.js' type='text/javascript'></script>
 <script src='contrib/rdflib.js' type='text/javascript'></script>
 <script src='contrib/sha1.js' type='text/javascript'></script>
 <script src='js/cal.js' type='text/javascript'></script>
@@ -21,77 +21,33 @@ var proxy_template = "https://rww.io/proxy?uri={uri}";
 // User's WebID
 var mywebid;
 var mygraph;
-// Date
-var date = new Date();
-var d = date.getDate();
-var m = date.getMonth();
-var y = date.getFullYear();
-if (!events) {
-    var events = [
-		{
-		    id: '#11212',
-			title: 'All Day Event',
-			start: new Date(y, m, 1),
-			allDay: true
-		},
-		{
-			title: 'Long Event',
-			start: new Date(y, m, d-5),
-			end: new Date(y, m, d-2),
-			color: '#51b749'
-		},
-		{
-			id: 999,
-			title: 'Repeating Event',
-			start: new Date(y, m, d-3, 16, 0),
-			allDay: false
-		},
-		{
-			id: 999,
-			title: 'Repeating Event',
-			start: new Date(y, m, d+4, 16, 0),
-			allDay: false
-		},
-		{
-			title: 'Meeting',
-			start: new Date(y, m, d, 10, 30),
-			allDay: false
-		},
-		{
-			title: 'Lunch',
-			start: new Date(y, m, d, 12, 0),
-			end: new Date(y, m, d, 14, 0),
-			allDay: false
-		},
-		{
-			title: 'Birthday Party',
-			start: new Date(y, m, d+1, 19, 0),
-			end: new Date(y, m, d+1, 22, 30),
-			allDay: false
-		}
-	];
-}
 
 // ------------------- UI and initialization ---------------
 $(document).ready(function() {
-    var uri = document.location.origin;
+    var uri = getCalPath(new Date(), undefined, 'events');
     new $.ajax({
         type: 'head',
         url: uri,
-        success: function(data, textStatus, request) {
+        complete: function(request, textStatus) {
             webid = request.getResponseHeader('User');
             if ((webid) && (webid.slice(0, 4) == 'http')) {
                 // check if the user is authenticated
                 mywebid = webid;
                 userInfo(webid, "me");
                 // render
-                
-                var curr_month = getCalPath(new Date(), 'events');
-                loadRemote(webid, curr_month);
             } else {
-                // not authenticated -> get user WebID from input
-                //render();
+                // not authenticated
+                var html = $('<div class="user left">Welcome, <strong>unknown user</strong>!</div>'+
+                            '<div class="user-pic right">'+
+                                '<img src="https://rww.io/common/images/nouser.png" title="unknown user" class="login-photo img-border" />'+
+                            '</div>');
+                $('#me').append(html);
             }
+            if (textStatus == 'error')
+                render();
+            else
+                loadRemote(uri);
+
         }
     });
 });
@@ -116,7 +72,7 @@ $(document).ready(function() {
         </div>
         <div class="blockG" id="rotateG_08">
         </div>
-        <div class="spinner-text"><p>Loading...</p></div>
+        <div class="spinner-text"><p>Processing...</p></div>
     </div>
     <div class="center">
         <div id="mask"></div>
@@ -139,7 +95,7 @@ $(document).ready(function() {
         </div>
         <div class="editor-spacer">  
             <span class="span-left cell inline-block">Event name</span>        
-            <div class="left cell inline-block"> <input type="text" name="title" id="title" class="text left" /></div>
+            <div class="left cell inline-block"> <input type="text" name="title" id="title" class="text left" autofocus /></div>
         </div>
         <div id="duration" class="duration">
             <div id="timepicker" class="timepicker"></div>

@@ -42,7 +42,6 @@ function loadRemote(eventsURI) {
 
         for (var e in evs) {
             var ev = g.statementsMatching(evs[e]['subject']);
-            console.log(e);
             var EVENTS  = $rdf.Namespace('http://purl.org/NET/c4dm/event.owl#');
             var TIME = $rdf.Namespace('http://purl.org/NET/c4dm/timeline.owl#');
             var DC = $rdf.Namespace('http://purl.org/dc/elements/1.1/');
@@ -66,7 +65,6 @@ function loadRemote(eventsURI) {
                 color: (color)?color['object']['value']:undefined,
                 maker: (maker)?maker['object']['value']:undefined
             };
-            console.log(event);
             calEvents.push(event);
         }
         
@@ -168,7 +166,6 @@ function saveEvent (path) {
     var endDay = parseInt($('#endDayVal').val());
     if (endDay) {
         endDay = new Date(endDay + endHour);
-        console.log(endDay);
     }
 
     // prepare the ID
@@ -209,9 +206,6 @@ function saveEvent (path) {
         path = getCalPath(startDay, undefined, 'events'); 
     // finally write the data remotely
     putRemote(path, data);
-
-    console.log(path);
-    console.log(data);
 
     // redraw the calendar
     $('#calendar').empty();
@@ -259,7 +253,6 @@ function eventsToRDF() {
                 FOAF('maker'),
                 $rdf.sym(event['maker']));
     }
-    console.log(g);
     return new $rdf.Serializer(g).toN3(g);
 }
 
@@ -305,9 +298,29 @@ function eventToRDF(id, title, color, allDay, startDay, endDay) {
     return data;
 }
 
+function updateEvent(event, dayDelta, minuteDelta, allDay) {
+    $('#spinner').show();
+    // transform to RDF so we can save remotely
+    var data = eventsToRDF();
+
+    // prepare the resource URI
+    if (!path)
+        var path = getCalPath(event.start, undefined, 'events'); 
+    // finally write the data remotely
+    putRemote(path, data);
+
+    // redraw the calendar
+    $('#calendar').empty();
+    render(calEvents);
+    $('#spinner').hide();
+}
+
 function deleteEvent() {
     var id = $('#id').val();
-    console.log(id);
+    
+    // hide UI
+    $('#editevent').hide()
+
     // remove event from display
     $('#calendar').fullCalendar('removeEvents', [id]);
     // remove event from events
@@ -316,12 +329,20 @@ function deleteEvent() {
             calEvents.splice(event, 1);
     }
     // update remotely
+        // transform to RDF so we can save remotely
+    var data = eventsToRDF();
 
+    // prepare the resource URI
+    if (!path)
+        var path = getCalPath(startDay, undefined, 'events'); 
+    // finally write the data remotely
+    putRemote(path, data);
+
+    // redraw the calendar
+    $('#calendar').empty();
+    render(calEvents);
     
-    // hide UI
-    $('#editevent').hide()
-    console.log(calEvents);
-    return true;
+    return;
 }
 
 // ----- RENDER -------
@@ -424,6 +445,23 @@ function render(events) {
             showEditor(jsEvent);
             $('#title').focus();
 		},
+		eventDrop: function(event,dayDelta,minuteDelta,allDay,revertFunc) {
+		    // update after dragging an event
+            if (!confirm("Are you sure about this change?")) {
+                revertFunc();
+            } else {
+                updateEvent(event, dayDelta, minuteDelta, allDay);
+            }
+        },
+        eventResize: function(event,dayDelta,minuteDelta,revertFunc) {
+            // update after resizing an event (in week/day view)
+            if (!confirm("Are you sure about this change?")) {
+                revertFunc();
+            } else {
+                updateEvent(event, dayDelta, minuteDelta, undefined);
+            }
+
+        },
 		editable: true,
         events: events
 	});
