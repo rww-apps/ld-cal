@@ -1,6 +1,5 @@
 // clear previous values
 function clearFields() {
-    $('#eventdate').empty();
     $('#title').val('');
     $('#id').val('');
     $('#allDay').prop('checked', false);
@@ -138,13 +137,18 @@ function putRemote(uri, data) {
 function saveEvent (path) {
     $('#editevent').hide(); 
     $('#spinner').show();
+    // date picker
+    var $pickerStart = $('#pickerStart').pickadate();
+    var ps = $pickerStart.pickadate('picker').get('highlight');
+    var $pickerEnd = $('#pickerEnd').pickadate();
+    var pe = $pickerEnd.pickadate('picker').get('highlight');
     // DEBUG
     /*
     console.log(mywebid);
     console.log('id='+$('#id').val());
     console.log('allDay='+$('#allDay').prop('checked'));
-    console.log('startDay='+$('#startDayVal').val());
-    console.log('endDay='+$('#endDayVal').val());
+    console.log('startDay='+ps.pick);
+    console.log('endDay='+pe.pick);
     console.log('startHour='+$('#startHour').val());
     console.log('endHour='+$('#endHour').val());
     console.log('title='+$('#title').val());
@@ -160,10 +164,10 @@ function saveEvent (path) {
                         parseInt($('#startHour').val().slice(-2));
     var endHour   = (parseInt($('#endHour').val().slice(0,2)) * 3600000)+
                         parseInt($('#endHour').val().slice(-2));
-    var startDay = parseInt($('#startDayVal').val()) + parseInt(startHour);
+    var startDay = parseInt(ps.pick) + parseInt(startHour);
     startDay = new Date(parseInt(startDay));
 
-    var endDay = parseInt($('#endDayVal').val());
+    var endDay = parseInt(pe.pick);
     if (endDay) {
         endDay = new Date(endDay + endHour);
     }
@@ -208,8 +212,11 @@ function saveEvent (path) {
     putRemote(path, data);
 
     // redraw the calendar
-    $('#calendar').empty();
+    var view = $('#calendar').fullCalendar('getView');
+    console.log(view.name);
+    $('#calendar').fullCalendar('destroy');
     render(calEvents);
+    $('#calendar').fullCalendar('changeView', view.name);
     $('#spinner').hide();
 }
 
@@ -298,7 +305,7 @@ function eventToRDF(id, title, color, allDay, startDay, endDay) {
     return data;
 }
 
-function updateEvent(event, dayDelta, minuteDelta, allDay) {
+function updateEvent(event) {
     $('#spinner').show();
     // transform to RDF so we can save remotely
     var data = eventsToRDF();
@@ -310,8 +317,11 @@ function updateEvent(event, dayDelta, minuteDelta, allDay) {
     putRemote(path, data);
 
     // redraw the calendar
-    $('#calendar').empty();
+    var view = $('#calendar').fullCalendar('getView');
+    console.log(view.name);
+    $('#calendar').fullCalendar('destroy');
     render(calEvents);
+    $('#calendar').fullCalendar('changeView', view.name);
     $('#spinner').hide();
 }
 
@@ -347,13 +357,6 @@ function deleteEvent() {
 
 // ----- RENDER -------
 function render(events) {
-/*
-    if (authd)
-        var events = dummy_events;
-    else
-        var events = [];
-*/
-    
 	var calendar = $('#calendar').fullCalendar({
 		header: {
 			left: 'prev,next today',
@@ -367,22 +370,20 @@ function render(events) {
             $('#id').val(calEvent.id);
             
             var startDay = $.fullCalendar.formatDate(calEvent.start, 'ddd, MMMM dd yyyy');
-            var endDay = $.fullCalendar.formatDate(calEvent.end, 'ddd, MMMM dd yyyy');
-            if (calEvent.end && startDay != endDay)
-                var period = '<div id="startDay" class="right">'+startDay+' to</div>'+
-                            '<input type="hidden" id="startDayVal" value="'+$.fullCalendar.parseDate(startDay).getTime()+'" />'+
-                            '<div id="endDay">'+endDay+'</div>'+
-                            '<input type="hidden" id="endDayVal" value="'+$.fullCalendar.parseDate(endDay).getTime()+'" />';
-            else
-                var period = '<div id="startDay" class="right">'+startDay+'</div>'+
-                            '<input type="hidden" id="startDayVal" value="'+$.fullCalendar.parseDate(startDay).getTime()+'" />';
-            $('#eventdate').html(period);
+            var endDay = (!calEvent.end)?$.fullCalendar.formatDate(calEvent.start, 'ddd, MMMM dd yyyy'):$.fullCalendar.formatDate(calEvent.end, 'ddd, MMMM dd yyyy');    
+            
+            // date picker
+            var $pickerStart = $('#pickerStart').pickadate();
+            var ps = $pickerStart.pickadate('picker').set('select', $.fullCalendar.parseDate(startDay));
+            var $pickerEnd = $('#pickerEnd').pickadate();
+            var pe = $pickerEnd.pickadate('picker').set('select', $.fullCalendar.parseDate(endDay));
+
             $('#title').val(calEvent.title);
             setColor(calEvent.color);
             // time
             var startHour = $.fullCalendar.formatDate(calEvent.start, 'HH:mm');
             // set 1h interval by default if no end hour is set
-            if (calEvent.allDay == false) {
+            if (calEvent.allDay == false && !calEvent.end) {
                 var endHour = parseInt(startHour.slice(0, startHour.indexOf(':')))+1;
                 var endHour = endHour+':00';
             } else if (calEvent.end) {
@@ -390,7 +391,7 @@ function render(events) {
             } else {
                 var endHour = '00:00';
             }
-            
+
             $('#timepicker').html('');
             $('#timepicker').append('<span class="span-left cell inline-block">Event time</span>'+
                             '<div class="left cell inline-block">'+timeSelector('startHour', startHour)+'</div>');
@@ -411,16 +412,12 @@ function render(events) {
             setColor();
             startDay = $.fullCalendar.formatDate(start, 'ddd, MMMM dd yyyy');
             endDay = $.fullCalendar.formatDate(end, 'ddd, MMMM dd yyyy');
-            if (startDay != endDay)
-                var period = '<div id="startDay" class="right">'+startDay+'</div> to '+
-                            '<input type="hidden" id="startDayVal" value="'+start.getTime()+'" />'+
-                            '<div id="endDay">'+endDay+'</div>'+
-                            '<input type="hidden" id="endDayVal" value="'+end.getTime()+'" />';
-//                            '<input type="hidden" id="endDayVal" value="'+$.fullCalendar.formatDate(end, 'yyyy-MM-dd')+'" />';
-            else
-                var period = '<div id="startDay" class="right">'+startDay+'</div>'+
-                            '<input type="hidden" id="startDayVal" value="'+start.getTime()+'" />';
-            $('#eventdate').html(period);
+
+            // date picker
+            var $pickerStart = $('#pickerStart').pickadate();
+            var ps = $pickerStart.pickadate('picker').set('select', $.fullCalendar.parseDate(start));
+            var $pickerEnd = $('#pickerEnd').pickadate();
+            var pe = $pickerEnd.pickadate('picker').set('select', $.fullCalendar.parseDate(end));
 
             // time
             var startHour = $.fullCalendar.formatDate(start, 'HH:mm');
@@ -450,7 +447,7 @@ function render(events) {
             if (!confirm("Are you sure about this change?")) {
                 revertFunc();
             } else {
-                updateEvent(event, dayDelta, minuteDelta, allDay);
+                updateEvent(event);
             }
         },
         eventResize: function(event,dayDelta,minuteDelta,revertFunc) {
@@ -458,7 +455,7 @@ function render(events) {
             if (!confirm("Are you sure about this change?")) {
                 revertFunc();
             } else {
-                updateEvent(event, dayDelta, minuteDelta, undefined);
+                updateEvent(event);
             }
 
         },
@@ -538,4 +535,49 @@ function setColor (color) {
     $('#checkedImg').remove();
     var htmlChecked = '<img id="checkedImg" class="checkedImg" src="img/checked.png" title="'+defClass+'" alt="'+color+'" />';
     $('#'+defClass).html(htmlChecked);
+}
+
+// ----- USER INFO -------
+function userInfo (webid, baseId) {
+    var RDF = $rdf.Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+    var FOAF = $rdf.Namespace("http://xmlns.com/foaf/0.1/");
+    var WAPP = $rdf.Namespace("http://my-profile.eu/ns/webapp#");
+    var g = $rdf.graph();
+    var f = $rdf.fetcher(g);
+    // add CORS proxy
+    $rdf.Fetcher.crossSiteProxyTemplate=proxy_template;
+    
+    var docURI = webid.slice(0, webid.indexOf('#'));
+    var webidRes = $rdf.sym(webid);
+    
+    // fetch user data
+    f.nowOrWhenFetched(docURI,undefined,function(){
+        // export the user graph
+        mygraph = g;
+        // get some basic info
+        var name = g.any(webidRes, FOAF('name'));
+        var pic = g.any(webidRes, FOAF('img'));
+        var depic = g.any(webidRes, FOAF('depiction'));
+       
+        if (name == undefined)
+            name = 'Unknown';
+        else
+            name = name.value;
+
+        if (name.length > 22)
+            name = name.slice(0, 18)+'...';
+
+        if (pic == undefined) {
+            if (depic)
+                pic = depic.value;
+            else
+                pic = 'https://rww.io/common/images/nouser.png';
+        } else {
+            pic = pic.value;
+        }
+        
+        // main divs      
+        var html = $('<div class="user left">Welcome, <strong>'+name+'</strong></div><div class="user-pic right"><img src="'+pic+'" title="'+name+'" class="login-photo img-border" /></div>');
+        $('#'+baseId).append(html);
+    });
 }
