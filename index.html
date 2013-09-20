@@ -131,7 +131,7 @@
 
     // ------------------- UI and initialization ---------------
     $(document).ready(function() {
-        var uri = getCalPath(new Date(), undefined, 'events');
+        var uri = window.location.protocol+'//'+window.location.host; 
         new $.ajax({
             type: 'head',
             url: uri,
