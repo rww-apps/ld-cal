@@ -113,6 +113,18 @@ a { text-decoration: underline; vertical-align: top; }
     visibility: hidden;
 }
 
+#spinner {
+    z-index: 1005;
+    width: 200px;
+    height: 200px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    background-image: url(../img/preload.gif);
+    background-repeat: no-repeat;
+    background-position: center;
+    margin: -100px 0 0 -100px;
+}
 .registration {
     color: #000;
     padding: 20px;
@@ -283,15 +295,6 @@ select {
     margin-top: 65px;
     background-color:#ddd;
     opacity:.8;
-}
-
-#spinner {
-    position:absolute;
-    margin-left: 47.5%;
-    margin-top: 15%;
-    z-index: 2000;
-    width:62px;
-    height:77px
 }
 
 .spinner-text {

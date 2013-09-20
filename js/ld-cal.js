@@ -24,6 +24,7 @@ function getCalPath(day, granularity, resource) {
 // Load calendar data from user storage
 var calEvents = []; // store all events
 function loadRemote(URI) {
+    $('#spinner').show();
     var g = $rdf.graph();
     var f = $rdf.fetcher(g);
     // add CORS proxy
@@ -101,6 +102,7 @@ function loadRemote(URI) {
         g.query(eq,onresult,undefined,undefined);
    */
         render(calEvents);
+        $('#spinner').hide();
     });
 }
 
@@ -137,7 +139,6 @@ function putRemote(uri, data) {
 // Save calendar data to user storage
 function saveEvent (path) {
     $('#editevent').hide(); 
-    $('#spinner').show();
     // date picker
     var $pickerStart = $('#pickerStart').pickadate();
     var ps = $pickerStart.pickadate('picker').get('highlight');
@@ -264,7 +265,6 @@ function eventsToRDF() {
 }
 
 function updateEvent(event) {
-    $('#spinner').show();
     // transform to RDF so we can save remotely
     var data = eventsToRDF();
 
@@ -276,7 +276,6 @@ function updateEvent(event) {
     $('#calendar').fullCalendar('destroy');
     render(calEvents);
     $('#calendar').fullCalendar('changeView', view.name);
-    $('#spinner').hide();
 }
 
 function deleteEvent() {

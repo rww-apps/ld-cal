@@ -18,28 +18,7 @@
 </head>
 
 <body>
-    <div id="spinner" >
-        <div class="blockG" id="rotateG_01">
-        </div>
-        <div class="blockG" id="rotateG_02">
-        </div>
-        <div class="blockG" id="rotateG_03">
-        </div>
-        <div class="blockG" id="rotateG_04">
-        </div>
-        <div class="blockG" id="rotateG_05">
-        </div>
-        <div class="blockG" id="rotateG_06">
-        </div>
-        <div class="blockG" id="rotateG_07">
-        </div>
-        <div class="blockG" id="rotateG_08">
-        </div>
-        <div class="spinner-text"><p>Working...</p></div>
-    </div>
-    <div class="center">
-        <div id="mask"></div>
-    </div>
+    <div id="spinner" hidden></div>
     <div id="topnav" class="top-nav center">
         <span class="title" title="Home"><a href="#">Linked Data Calendar</a></span>
         <div id="me" class="user-info"></div>
@@ -103,15 +82,6 @@
         <div id="triples" class="left">
         </div>
         <div class="center">
-            <div class="actions left">
-                <!--
-                <select id="serialization" onchange="registerTriples($(this).val())">
-                    <option value="turtle">Turtle</option>
-                    <option value="nt">Ntriples</option>
-                    <option value="rdf/xml">RDF/XML</option>
-                </select>
-                -->
-            </div>
             <div class="actions right"><a href="#" class="button button-rounded button-flat-primary" onclick="$('#registration').hide()">Close</a></div>
             <div class="actions right"><a href="#" class="button button-rounded button-flat-highlight" onclick="registerTriples()">(Re)generate triples</a></div>
         </div>
@@ -131,10 +101,10 @@
 
     // ------------------- UI and initialization ---------------
     $(document).ready(function() {
-        var uri = window.location.protocol+'//'+window.location.host; 
+        // dirty hack to get the User header for login
         new $.ajax({
             type: 'head',
-            url: uri,
+            url: '/',
             complete: function(request, textStatus) {
                 // check if the user is authenticated
                 user = request.getResponseHeader('User');
