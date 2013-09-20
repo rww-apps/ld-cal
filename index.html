@@ -14,7 +14,7 @@
 <script src='contrib/fullcalendar.min.js' type='text/javascript'></script>
 <script src='contrib/rdflib.min.js' type='text/javascript'></script>
 <script src='contrib/sha1.js' type='text/javascript'></script>
-<script src='js/ld-cal.min.js' type='text/javascript'></script>
+<script src='js/ld-cal.js' type='text/javascript'></script>
 </head>
 
 <body>
@@ -69,11 +69,11 @@
             <div class="right"><span class="span-right cell inline-block">All day?</span><input type="checkbox" name="allday" id="allDay" class="right" onclick="toggleHours()" /></div>
         </div>
         <div class="editor-buttons force-left">
-            <div class="left"><a href="#" class="button button-rounded button-flat-primary" onclick="saveEvent()"><i class="icon-save"></i> Save</a></div>
-            <div class="left actions"><a href="#" class="button button-rounded button-flat-highlight" onclick="$('#editevent').hide()"><i class="icon-remove"></i> Cancel</a></div>
+            <div class="left"><a href="#" class="button button-rounded button-flat-primary" onclick="saveEvent()">Save</a></div>
+            <div class="left actions"><a href="#" class="button button-rounded button-flat-highlight" onclick="$('#editevent').hide()">Cancel</a></div>
         </div>
         <div class="editor-buttons-right">
-            <div class="right actions"><a href="#" class="button button-rounded button-flat-caution" onclick="deleteEvent()"><i class="icon-remove"></i> Delete</a></div>
+            <div class="right actions"><a href="#" class="button button-rounded button-flat-caution" onclick="deleteEvent()">Delete</a></div>
         </div>
         
         <div id="colorpicker" class="colorpicker">
@@ -87,11 +87,44 @@
             </div>
         </div>
     </div>
+    <!-- Registration -->
+    <div id="registration" class="registration" style="display: none;">
+        <div class="left">
+            <span><strong>Warning!</strong></span>
+            <span>Could not find the endpoint for your events resource.</span>
+        </div>
+        <div class="left">
+            <span class="left">LD-Cal requires a place to store events data. To indicate where it can store the data, please provide an URI for the events resource and then add the generated triples to your WebID profile:</span>
+        </div>
+        <div class="left">
+            <span class="left cell inline-block">Events resource</span>
+            <div class="right cell inline-block"><input type="text" id="endpoint" class="text left" placeholder="URI for the document holding your events data" /></div>
+        </div>
+        <div id="triples" class="left">
+        </div>
+        <div class="center">
+            <div class="actions left">
+                <!--
+                <select id="serialization" onchange="registerTriples($(this).val())">
+                    <option value="turtle">Turtle</option>
+                    <option value="nt">Ntriples</option>
+                    <option value="rdf/xml">RDF/XML</option>
+                </select>
+                -->
+            </div>
+            <div class="actions right"><a href="#" class="button button-rounded button-flat-primary" onclick="$('#registration').hide()">Close</a></div>
+            <div class="actions right"><a href="#" class="button button-rounded button-flat-highlight" onclick="registerTriples()">(Re)generate triples</a></div>
+        </div>
+    </div>
     <script>
     // ----- Modify if needed ------
     var proxy_template = "https://rww.io/proxy?uri={uri}";
 
     // ----- DO NOT MODIFY BELOW -------
+    // App name
+    var appName = 'https://ld-cal.rww.io';
+    // Storage endpoint URI
+    var storageURI;
     // User's WebID
     var mywebid;
     var mygraph;
@@ -103,12 +136,12 @@
             type: 'head',
             url: uri,
             complete: function(request, textStatus) {
+                // check if the user is authenticated
                 user = request.getResponseHeader('User');
                 if ((user) && (user.slice(0, 4) == 'http')) {
-                    // check if the user is authenticated
                     mywebid = user;
                     userInfo(user, "me");
-                    // render
+                    once_authenticated(user);
                 } else {
                     // not authenticated
                     mywebid = user;
@@ -117,12 +150,11 @@
                                     '<img src="img/nouser.png" title="unknown user" class="login-photo img-border" />'+
                                 '</div>');
                     $('#me').append(html);
+                    $('#registration').show();
                 }
+                // render the calendar
                 if (textStatus == 'error')
                     render();
-                else
-                    loadRemote(uri);
-
             }
         });
     });

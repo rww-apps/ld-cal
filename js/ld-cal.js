@@ -23,20 +23,20 @@ function getCalPath(day, granularity, resource) {
 
 // Load calendar data from user storage
 var calEvents = []; // store all events
-function loadRemote(eventsURI) {
+function loadRemote(URI) {
     var g = $rdf.graph();
     var f = $rdf.fetcher(g);
     // add CORS proxy
-    $rdf.Fetcher.crossSiteProxyTemplate="https://example.com/proxy?uri={uri}";
+    $rdf.Fetcher.crossSiteProxyTemplate=proxy_template;
     
     // fetch user data
-    f.nowOrWhenFetched(eventsURI,undefined,function(){
+    f.nowOrWhenFetched(URI,undefined,function(){
         // get all event IDs
         t = g;
         var evs = g.statementsMatching(undefined, 
                     $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), 
                     undefined, 
-                    $rdf.sym(eventsURI));
+                    $rdf.sym(URI));
 
         for (var e in evs) {
             var ev = g.statementsMatching(evs[e]['subject']);
@@ -161,12 +161,17 @@ function saveEvent (path) {
     var color = $('#checkedImg').attr('alt');
     var allDay = $('#allDay').prop('checked');
 
-    var startHour = (parseInt($('#startHour').val().slice(0,2)) * 3600000)+
-                        parseInt($('#startHour').val().slice(-2));
-    var endHour   = (parseInt($('#endHour').val().slice(0,2)) * 3600000)+
-                        parseInt($('#endHour').val().slice(-2));
-    var startDay = parseInt(ps.pick) + parseInt(startHour);
-    startDay = new Date(parseInt(startDay));
+    var start = $('#startHour').val();
+    var hourS = parseInt(start.slice(0, start.indexOf(':'))) * 60;
+    var minsS = parseInt(start.slice(start.indexOf(':')+1, start.length));
+    var startHour = parseInt((hourS + minsS) * 60000);
+    
+    var end = $('#endHour').val();
+    var hourE = parseInt(end.slice(0, end.indexOf(':'))) * 60;
+    var minsE = parseInt(end.slice(end.indexOf(':')+1, end.length));
+    var endHour = parseInt((hourE + minsE) * 60000);
+
+    var startDay = new Date(parseInt(ps.pick) + parseInt(startHour));
 
     var endDay = parseInt(pe.pick);
     if (endDay) {
@@ -191,7 +196,7 @@ function saveEvent (path) {
             color: (color)?color:undefined,
             maker: (mywebid)?mywebid:undefined
         };
-
+    console.log(event);
     // save event locally
     if (exists) {
         for (var i in calEvents) {
@@ -205,11 +210,8 @@ function saveEvent (path) {
     // transform to RDF so we can save remotely
     var data = eventsToRDF();
 
-    // prepare the resource URI
-    if (!path)
-        path = getCalPath(startDay, undefined, 'events'); 
     // finally write the data remotely
-    putRemote(path, data);
+    putRemote(storageURI, data);
 
     // redraw the calendar
     var view = $('#calendar').fullCalendar('getView');
@@ -261,58 +263,13 @@ function eventsToRDF() {
     return new $rdf.Serializer(g).toN3(g);
 }
 
-
-function eventToRDF(id, title, color, allDay, startDay, endDay) {
-    var RDF = $rdf.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#');
-    var EVENTS  = $rdf.Namespace('http://purl.org/NET/c4dm/event.owl#');
-    var TIME = $rdf.Namespace('http://purl.org/NET/c4dm/timeline.owl#');
-    var DC = $rdf.Namespace('http://purl.org/dc/elements/1.1/');
-    var FOAF = $rdf.Namespace('http://xmlns.com/foaf/0.1/');
-    var UI = $rdf.Namespace('http://www.w3.org/ns/ui#');
-    // save the data in a graph
-    g = $rdf.graph();
-
-    // set triples
-    g.add($rdf.sym(id),
-            RDF('type'),
-            EVENTS('Event'));
-    g.add($rdf.sym(id),
-            TIME('start'),
-            $rdf.lit(startDay.toISOString(), '', $rdf.Symbol.prototype.XSDdateTime));
-    if (endDay) {
-        g.add($rdf.sym(id),
-                TIME('end'),
-                $rdf.lit(endDay.toISOString(), '', $rdf.Symbol.prototype.XSDdateTime));
-    }
-    if (allDay) {
-        g.add($rdf.sym(id),
-            TIME('allDay'),
-            $rdf.lit(allDay));
-    }
-    g.add($rdf.sym(id),
-            DC('title'),
-            $rdf.lit(title));
-    g.add($rdf.sym(id),
-            UI('color'),
-            $rdf.lit(color));
-    g.add($rdf.sym(id),
-            FOAF('maker'),
-            $rdf.sym(mywebid));
-    var data = new $rdf.Serializer(g).toN3(g);
-
-    return data;
-}
-
 function updateEvent(event) {
     $('#spinner').show();
     // transform to RDF so we can save remotely
     var data = eventsToRDF();
 
-    // prepare the resource URI
-    if (!path)
-        var path = getCalPath(event.start, undefined, 'events'); 
     // finally write the data remotely
-    putRemote(path, data);
+    putRemote(storageURI, data);
 
     // redraw the calendar
     var view = $('#calendar').fullCalendar('getView');
@@ -339,11 +296,8 @@ function deleteEvent() {
         // transform to RDF so we can save remotely
     var data = eventsToRDF();
 
-    // prepare the resource URI
-    if (!path)
-        var path = getCalPath(startDay, undefined, 'events'); 
     // finally write the data remotely
-    putRemote(path, data);
+    putRemote(storageURI, data);
 
     // redraw the calendar
     $('#calendar').empty();
@@ -490,6 +444,7 @@ $(document).bind('keydown', function(e) {
     }
 });
 
+// displays HH:mm
 function timeSelector (id, defValue) {
     if (!defValue || defValue == '')
         defValue = '10:00';
@@ -546,6 +501,83 @@ function updateHour(){
     var mins = startHour.slice(startHour.indexOf(':'), startHour.length);
     hour = hour+mins;
 	$('#endHour').val(hour);
+}
+
+function escapeHtml(html) {
+    return html.replace(/</g, '&lt;').replace(/\>/g, '&gt;');
+}
+
+function registerTriples() {
+    var webapp = $rdf.Namespace("http://ns.rww.io/wapp#");
+    var rdfs = $rdf.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+
+    var endpoint = $('#endpoint').val().trim();
+    var frag = '#ld-cal';
+    
+    // prepare graph
+    g = $rdf.graph();
+
+    // add these triples to the profile document
+    g.add($rdf.sym(frag),
+            rdfs('type'),
+            webapp('app'));
+    g.add($rdf.sym(frag),
+            webapp('name'),
+            $rdf.lit('LD-Cal'));
+    g.add($rdf.sym(frag),
+            webapp('serviceId'),
+            $rdf.sym(appName));
+    g.add($rdf.sym(frag),
+            webapp('endpoint'),
+            $rdf.sym(endpoint));
+    g.add($rdf.sym(frag),
+            webapp('description'),
+            $rdf.lit('Simple Linked Data calendar with agenda.'));
+            
+    var data = new $rdf.Serializer(g).toN3(g);
+        
+    var html = '<textarea>'+data+'</textarea>';
+    
+    $('#triples').html(html);
+}
+
+// get endpoint location from the user's WebID
+function once_authenticated(webid) {
+    var webapp = $rdf.Namespace("http://my-profile.eu/ns/webapp#");
+    var FOAF = $rdf.Namespace("http://xmlns.com/foaf/0.1/");
+    var g = $rdf.graph();
+    var f = $rdf.fetcher(g);
+    // add CORS proxy
+    $rdf.Fetcher.crossSiteProxyTemplate=proxy_template;
+    
+    var docURI = webid.slice(0, webid.indexOf('#'));
+    var webidRes = g.sym(webid);
+
+    // fetch user data
+    f.nowOrWhenFetched(docURI,undefined,function(){
+        var apps = g.statementsMatching(undefined, 
+                    $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), 
+                    webapp('app'), 
+                    $rdf.sym(docURI));
+
+        if (apps.length>0) {
+            for (var i in apps) {
+                var app = apps[i]['subject'];
+                var service = g.any(app, webapp('serviceId'));
+                var endpoint = g.any(app, webapp('endpoint'));
+                // check if the user registered the app
+                if ((service) && (service.value == appName)) {
+                    storageURI = endpoint.value;
+                    loadRemote(storageURI);
+                    return true;
+                } else {
+                    render();
+                    $('#registration').show();
+                }
+            }
+        }
+        return false;
+    });
 }
 
 // ----- USER INFO -------

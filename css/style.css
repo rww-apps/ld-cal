@@ -1,5 +1,5 @@
 /* $Id$ */
-body { line-height: 1.25; }
+body { line-height: 1.25; width: 100%; }
 a { text-decoration: underline; vertical-align: top; }
 
 .left {
@@ -113,6 +113,41 @@ a { text-decoration: underline; vertical-align: top; }
     visibility: hidden;
 }
 
+.registration {
+    color: #000;
+    padding: 20px;
+    width: 435px;
+    z-index: 1005;
+    position: fixed;
+    vertical-align: middle;
+    top: 20%;
+    left: 35%;
+    right: 35%;
+    
+    background: #fff;
+    border: 1px solid #e7604a;
+    -moz-box-shadow: 0px 2px 3px #ccc; 
+    -webkit-box-shadow: 0px 2px 3px #ccc; 
+    box-shadow: 0px 2px 3px #ccc; 
+}
+
+.registration span {
+    text-align: left;
+    padding: 7px 5px 5px 5px;
+}
+.registration div {
+    margin-bottom: 5px;
+}
+
+.registration textarea {
+    width: 410px;
+    height: 180px;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    float: left;
+}
+
 .editevent {
     color: #000;
     padding: 10px;
@@ -128,14 +163,14 @@ a { text-decoration: underline; vertical-align: top; }
     border: 1px solid #ccc; /* Just for demo */
     -moz-box-shadow: 0px 2px 2px #ccc; 
     -webkit-box-shadow: 0px 2px 2px #ccc; 
-    box-shadow: 0px 2px 2px #ccc;
-    
+    box-shadow: 0px 2px 2px #ccc;   
 }
-.editevent input[type=text] {
+
+input[type=text] {
     margin-bottom: 5px;
     background-color: #fff;
     border: 1px solid #ddd;
-    padding: 3px;
+    padding: 3px 3px 3px 5px;
     height: 20px;
     width: 300px;
     box-shadow: inset 1px 1px 0 rgba(0,0,0,.1),inset -1px -1px 0 rgba(0,0,0,.07);
