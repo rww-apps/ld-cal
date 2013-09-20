@@ -31,7 +31,6 @@ function loadRemote(eventsURI) {
     
     // fetch user data
     f.nowOrWhenFetched(eventsURI,undefined,function(){
-        $('#spinner').show();
         // get all event IDs
         t = g;
         var evs = g.statementsMatching(undefined, 
@@ -102,7 +101,6 @@ function loadRemote(eventsURI) {
         g.query(eq,onresult,undefined,undefined);
    */
         render(calEvents);
-        $('#spinner').hide();
     });
 }
 
@@ -129,6 +127,9 @@ function putRemote(uri, data) {
             507: function() {
                 console.log("507 Insufficient storage");
             },
+        },
+        complete: function() {
+            $('#spinner').hide();
         }
     });
 }
@@ -190,18 +191,17 @@ function saveEvent (path) {
             color: (color)?color:undefined,
             maker: (mywebid)?mywebid:undefined
         };
-    console.log(event);
+
     // save event locally
-    
-    if (exists) { // update by removing existing event
+    if (exists) {
         for (var i in calEvents) {
+            // update by removing the existing event
             if (calEvents[i].id == id)
                 calEvents.splice(i, 1);
         }
     }
     // add event to array
-    calEvents.push(event);    
-    
+    calEvents.push(event);
     // transform to RDF so we can save remotely
     var data = eventsToRDF();
 
@@ -213,11 +213,9 @@ function saveEvent (path) {
 
     // redraw the calendar
     var view = $('#calendar').fullCalendar('getView');
-    console.log(view.name);
     $('#calendar').fullCalendar('destroy');
     render(calEvents);
     $('#calendar').fullCalendar('changeView', view.name);
-    $('#spinner').hide();
 }
 
 function eventsToRDF() {
@@ -318,7 +316,6 @@ function updateEvent(event) {
 
     // redraw the calendar
     var view = $('#calendar').fullCalendar('getView');
-    console.log(view.name);
     $('#calendar').fullCalendar('destroy');
     render(calEvents);
     $('#calendar').fullCalendar('changeView', view.name);
@@ -357,6 +354,7 @@ function deleteEvent() {
 
 // ----- RENDER -------
 function render(events) {
+    $('#spinner').show();
 	var calendar = $('#calendar').fullCalendar({
 		header: {
 			left: 'prev,next today',
@@ -422,8 +420,9 @@ function render(events) {
             // time
             var startHour = $.fullCalendar.formatDate(start, 'HH:mm');
             if (allDay == true || !end) {
-                var endHour = parseInt(startHour.slice(0, startHour.indexOf(':')))+1;
-                var endHour = endHour+':00';
+                var hour = parseInt(startHour.slice(0, startHour.indexOf(':')))+1;
+                var mins = parseInt(startHour.slice(startHour.indexOf(':'), startHour.length));
+                endHour = hour+':'+mins;
             } else {
                 var endHour = $.fullCalendar.formatDate(end, 'HH:mm');
             }
@@ -462,6 +461,7 @@ function render(events) {
 		editable: true,
         events: events
 	});
+	$('#spinner').hide();
 }
 
 // Display the editor dialog
@@ -493,7 +493,8 @@ $(document).bind('keydown', function(e) {
 function timeSelector (id, defValue) {
     if (!defValue || defValue == '')
         defValue = '10:00';
-    var html = '<select id="'+id+'" class="'+id+'" name="'+id+'">';
+    var html = '<select id="'+id+'" class="'+id+'" name="'+id+'"';
+    html += (id == 'startHour')?' onchange="updateHour()">':'>';
     for(i = 0; i <= 23; i++) {
         if (i<10)
             i='0'+i;
@@ -535,6 +536,16 @@ function setColor (color) {
     $('#checkedImg').remove();
     var htmlChecked = '<img id="checkedImg" class="checkedImg" src="img/checked.png" title="'+defClass+'" alt="'+color+'" />';
     $('#'+defClass).html(htmlChecked);
+}
+
+// update end hour selector based on start hour value
+function updateHour(){
+    var startHour = $('#startHour').val();
+    var hour = parseInt(startHour.slice(0, startHour.indexOf(':')))+1;
+    hour = (hour.toString().length < 2)?'0'+hour:hour.toString();
+    var mins = startHour.slice(startHour.indexOf(':'), startHour.length);
+    hour = hour+mins;
+	$('#endHour').val(hour);
 }
 
 // ----- USER INFO -------

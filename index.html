@@ -7,15 +7,14 @@
 <link href='css/style.css' rel='stylesheet' type='text/css' />
 <link href='css/classic.css' rel='stylesheet' type='text/css' />
 <link href='css/classic.date.css' rel='stylesheet' type='text/css' />
-<link href='css/jquery-ui.css' rel='stylesheet' type='text/css' />
 <script src='contrib/jquery.min.js' type='text/javascript'></script>
 <script src='contrib/jquery-ui.custom.min.js' type='text/javascript'></script>
 <script src='contrib/picker.js' type='text/javascript'></script>
 <script src='contrib/picker.date.js' type='text/javascript'></script>
-<script src='contrib/fullcalendar.js' type='text/javascript'></script>
-<script src='contrib/rdflib.js' type='text/javascript'></script>
+<script src='contrib/fullcalendar.min.js' type='text/javascript'></script>
+<script src='contrib/rdflib.min.js' type='text/javascript'></script>
 <script src='contrib/sha1.js' type='text/javascript'></script>
-<script src='js/ld-cal.js' type='text/javascript'></script>
+<script src='js/ld-cal.min.js' type='text/javascript'></script>
 </head>
 
 <body>
@@ -104,14 +103,15 @@
             type: 'head',
             url: uri,
             complete: function(request, textStatus) {
-                webid = request.getResponseHeader('User');
-                if ((webid) && (webid.slice(0, 4) == 'http')) {
+                user = request.getResponseHeader('User');
+                if ((user) && (user.slice(0, 4) == 'http')) {
                     // check if the user is authenticated
-                    mywebid = webid;
-                    userInfo(webid, "me");
+                    mywebid = user;
+                    userInfo(user, "me");
                     // render
                 } else {
                     // not authenticated
+                    mywebid = user;
                     var html = $('<div class="user left">Welcome, <strong>unknown user</strong>!</div>'+
                                 '<div class="user-pic right">'+
                                     '<img src="img/nouser.png" title="unknown user" class="login-photo img-border" />'+
