@@ -542,7 +542,7 @@ function registerTriples() {
 
 // get endpoint location from the user's WebID
 function once_authenticated(webid) {
-    var webapp = $rdf.Namespace("http://my-profile.eu/ns/webapp#");
+    var webapp = $rdf.Namespace("http://ns.rww.io/wapp#");
     var FOAF = $rdf.Namespace("http://xmlns.com/foaf/0.1/");
     var g = $rdf.graph();
     var f = $rdf.fetcher(g);
@@ -583,7 +583,6 @@ function once_authenticated(webid) {
 function userInfo (webid, baseId) {
     var RDF = $rdf.Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#");
     var FOAF = $rdf.Namespace("http://xmlns.com/foaf/0.1/");
-    var WAPP = $rdf.Namespace("http://my-profile.eu/ns/webapp#");
     var g = $rdf.graph();
     var f = $rdf.fetcher(g);
     // add CORS proxy
