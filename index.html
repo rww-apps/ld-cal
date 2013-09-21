@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- vim: set ts=2 sts=2 sw=2 et: -->
 <html>
 <head>
 <link href='css/fullcalendar.css' rel='stylesheet' />
@@ -71,9 +72,10 @@
         <div class="left">
             <span><strong>Warning!</strong></span>
             <span>Could not find the endpoint for your events resource.</span>
+            <span><strong>Are you logged in?</strong></span>
         </div>
         <div class="left">
-            <span class="left">LD-Cal requires a place to store events data. To indicate where it can store the data, please provide an URI for the events resource and then add the generated triples to your WebID profile:</span>
+            <span class="left">If you are logged in, please note that LD-Cal requires a place to store events data. To indicate where it can store the data, please provide an URI for a <strong>writable</strong> events resource and then add the generated triples to your WebID profile:</span>
         </div>
         <div class="left">
             <span class="left cell inline-block">Events resource</span>
@@ -88,7 +90,8 @@
     </div>
     <script>
     // ----- Modify if needed ------
-    var proxy_template = "https://rww.io/proxy?uri={uri}";
+    var PROXY = "https://rww.io/proxy?uri={uri}";
+    var AUTH_PROVIDER = "https://ld-cal.rww.io/";
 
     // ----- DO NOT MODIFY BELOW -------
     // App name
@@ -101,32 +104,7 @@
 
     // ------------------- UI and initialization ---------------
     $(document).ready(function() {
-        // dirty hack to get the User header for login
-        new $.ajax({
-            type: 'head',
-            url: '/',
-            complete: function(request, textStatus) {
-                // check if the user is authenticated
-                user = request.getResponseHeader('User');
-                if ((user) && (user.slice(0, 4) == 'http')) {
-                    mywebid = user;
-                    userInfo(user, "me");
-                    once_authenticated(user);
-                } else {
-                    // not authenticated
-                    mywebid = user;
-                    var html = $('<div class="user left">Welcome, <strong>unknown user</strong>!</div>'+
-                                '<div class="user-pic right">'+
-                                    '<img src="img/nouser.png" title="unknown user" class="login-photo img-border" />'+
-                                '</div>');
-                    $('#me').append(html);
-                    $('#registration').show();
-                }
-                // render the calendar
-                if (textStatus == 'error')
-                    render();
-            }
-        });
+        authenticate('/');
     });
     </script>
 </body>

@@ -28,7 +28,7 @@ function loadRemote(URI) {
     var g = $rdf.graph();
     var f = $rdf.fetcher(g);
     // add CORS proxy
-    $rdf.Fetcher.crossSiteProxyTemplate=proxy_template;
+    $rdf.Fetcher.crossSiteProxyTemplate=PROXY;
     
     // fetch user data
     f.nowOrWhenFetched(URI,undefined,function(){
@@ -66,41 +66,7 @@ function loadRemote(URI) {
             };
             calEvents.push(event);
         }
-        
-    /*
-        var query = "PREFIX event: <http://purl.org/NET/c4dm/event.owl#> \n"+
-            "PREFIX timeline: <http://purl.org/NET/c4dm/timeline.owl#> \n"+
-            "PREFIX dc: <http://purl.org/dc/elements/1.1/> \n"+
-            "PREFIX foaf: <http://xmlns.com/foaf/0.1/> \n"+
-            "PREFIX ui: <http://www.w3.org/ns/ui#> \n"+
-            "SELECT * \n"+
-            "WHERE {\n"+
-            "  ?e a event:Event . \n"+
-            "  OPTIONAL { ?e timeline:start ?start . } \n"+
-            "  OPTIONAL { ?e timeline:end ?end . } \n"+
-            "  OPTIONAL { ?e timeline:allDay ?allday . } \n"+
-            "  OPTIONAL { ?e dc:title ?title . } \n"+
-            "  OPTIONAL { ?e ui:color ?color . } \n"+
-            "  OPTIONAL { ?e foaf:maker ?maker . } \n"+
-            "}";
 
-        var eq = $rdf.SPARQLToQuery(query,false,g)
-        var onresult = function(r) {
-            var event = {
-                id: r['?e']['value'],
-                start: (r['?start'])?$.fullCalendar.parseISO8601(r['?start']['value']):undefined,
-                end: (r['?end'])?$.fullCalendar.parseISO8601(r['?end']['value']):undefined,
-                allDay: (r['?allday'])?true:false,
-                title: (r['?title'])?r['?title']['value']:undefined,
-                color: (r['?color'])?r['?color']['value']:undefined,
-                maker: (r['?maker'])?r['?maker']['value']:undefined
-            };
-            console.log(event);
-            calEvents.push(event);
-        }
-        
-        g.query(eq,onresult,undefined,undefined);
-   */
         render(calEvents);
         $('#spinner').hide();
     });
@@ -291,8 +257,8 @@ function deleteEvent() {
         if (calEvents[event].id == id)
             calEvents.splice(event, 1);
     }
-    // update remotely
-        // transform to RDF so we can save remotely
+
+    // transform to RDF so we can save remotely
     var data = eventsToRDF();
 
     // finally write the data remotely
@@ -540,6 +506,40 @@ function registerTriples() {
     $('#triples').html(html);
 }
 
+// dirty hack to get the User header for login
+function authenticate(uri) {
+    console.log(uri);
+    $.ajax({
+        type: 'HEAD',
+        url: uri,
+        crossDomain: true,
+        complete: function(request, textStatus) {
+            // check if the user is authenticated
+            user = request.getResponseHeader('User');
+            console.log(request.getAllResponseHeaders());
+            console.log(request);
+            if ((user) && (user.slice(0, 4) == 'http')) {
+                mywebid = user;
+                userInfo(user);
+                once_authenticated(user);
+            } else {
+                // not authenticated
+                mywebid = user;
+                var html = $('<div class="user left"><a href="#" onclick="authenticate(\''+AUTH_PROVIDER+'\')">WebID login</a></div>'+
+                            '<div class="user-pic right">'+
+                                '<img src="img/nouser.png" title="unknown user" class="login-photo img-border" />'+
+                            '</div>');
+                $('#me').empty()
+                $('#me').html(html);
+                $('#registration').show();
+            }
+            // render the calendar
+            if (textStatus == 'error')
+                render();
+        }
+    });
+}
+
 // get endpoint location from the user's WebID
 function once_authenticated(webid) {
     var webapp = $rdf.Namespace("http://ns.rww.io/wapp#");
@@ -547,7 +547,7 @@ function once_authenticated(webid) {
     var g = $rdf.graph();
     var f = $rdf.fetcher(g);
     // add CORS proxy
-    $rdf.Fetcher.crossSiteProxyTemplate=proxy_template;
+    $rdf.Fetcher.crossSiteProxyTemplate=PROXY;
     
     var docURI = webid.slice(0, webid.indexOf('#'));
     var webidRes = g.sym(webid);
@@ -558,7 +558,6 @@ function once_authenticated(webid) {
                     $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), 
                     webapp('app'), 
                     $rdf.sym(docURI));
-
         if (apps.length>0) {
             for (var i in apps) {
                 var app = apps[i]['subject'];
@@ -568,25 +567,26 @@ function once_authenticated(webid) {
                 if ((service) && (service.value == appName)) {
                     storageURI = endpoint.value;
                     loadRemote(storageURI);
+                    $('#registration').hide()
                     return true;
-                } else {
-                    render();
-                    $('#registration').show();
                 }
             }
+        } else {
+            render();
+            $('#registration').show();
         }
         return false;
     });
 }
 
 // ----- USER INFO -------
-function userInfo (webid, baseId) {
+function userInfo (webid) {
     var RDF = $rdf.Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#");
     var FOAF = $rdf.Namespace("http://xmlns.com/foaf/0.1/");
     var g = $rdf.graph();
     var f = $rdf.fetcher(g);
     // add CORS proxy
-    $rdf.Fetcher.crossSiteProxyTemplate=proxy_template;
+    $rdf.Fetcher.crossSiteProxyTemplate=PROXY;
     
     var docURI = webid.slice(0, webid.indexOf('#'));
     var webidRes = $rdf.sym(webid);
@@ -612,13 +612,14 @@ function userInfo (webid, baseId) {
             if (depic)
                 pic = depic.value;
             else
-                pic = 'https://rww.io/common/images/nouser.png';
+                pic = 'img/nouser.png';
         } else {
             pic = pic.value;
         }
         
         // main divs      
         var html = $('<div class="user left">Welcome, <strong>'+name+'</strong></div><div class="user-pic right"><img src="'+pic+'" title="'+name+'" class="login-photo img-border" /></div>');
-        $('#'+baseId).append(html);
+        $('#me').empty()
+        $('#me').html(html);
     });
 }
