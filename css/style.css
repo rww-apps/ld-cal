@@ -126,6 +126,17 @@ a { text-decoration: underline; vertical-align: top; }
     margin: -100px 0 0 -100px;
 }
 
+a.white:link, a.white:visited{
+    color:#fff !important;
+    vertical-align:middle;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+a.white:hover {
+    text-decoration: underline;
+}
+
 .registration {
     color: #000;
     padding: 20px;

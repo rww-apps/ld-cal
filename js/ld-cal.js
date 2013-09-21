@@ -406,6 +406,7 @@ function showEditor(e) {
 $(document).bind('keydown', function(e) {
     if (e.keyCode == 27) { // ESC
         $('#editevent').hide();
+        $('#registration').hide();
     }
 });
 
@@ -525,7 +526,7 @@ function authenticate(uri) {
             } else {
                 // not authenticated
                 mywebid = user;
-                var html = $('<div class="user left"><a href="#" onclick="authenticate(\''+AUTH_PROVIDER+'\')">WebID login</a></div>'+
+                var html = $('<div class="user left"><a href="#" class="white" onclick="authenticate(\''+AUTH_PROVIDER+'\')">WebID login</a></div>'+
                             '<div class="user-pic right">'+
                                 '<img src="img/nouser.png" title="unknown user" class="login-photo img-border" />'+
                             '</div>');
