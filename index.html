@@ -30,7 +30,7 @@
         </div>
     </div>
     <!-- Event editor -->
-    <div id="editevent" class="editevent" style="display: none;">
+    <div id="editevent" class="editevent grey-border" style="display: none;">
         <input type="hidden" name="id" id="id" value="" />
         <div>  
             <span class="span-left cell inline-block"><strong>Event name</strong></span>        
@@ -68,7 +68,7 @@
         </div>
     </div>
     <!-- Registration -->
-    <div id="registration" class="registration" style="display: none;">
+    <div id="registration" class="registration red-border" style="display: none;">
         <div class="left">
             <span><strong>Warning!</strong></span>
             <span>Could not find the endpoint for your events resource.</span>
@@ -88,6 +88,39 @@
             <div class="actions right"><a href="#" class="button button-rounded button-flat-highlight" onclick="registerTriples()">(Re)generate triples</a></div>
         </div>
     </div>
+    <!-- Help -->
+    <br/>
+    <div>
+        <span>LD-cal v.1.0</span>
+        <span><a href="#" onclick="$('#help').show()">Help/Tips</a></span>
+    </div>
+    <div id="help" class="registration grey-border" style="display: none;">
+        <div class="left">
+            <h2>Help/Tips</h2>
+        </div>
+        <div class="left">
+            <span class="left"><strong>Month view</strong></span>
+            <div class="left">
+                <ul>
+                    <li>create long events by clicking and dragging over multiple days</li>
+                    <li>drag and drop events to change dates</li>
+                </ul>
+            </div>
+        </div>
+        <div class="left">
+            <span class="left"><strong>Week view</strong></span>
+            <div class="left">
+                <ul>    
+                    <li>dropping the event to the top bar will turn it into a "Full day" event</li>
+                    <li>dropping the event back into a specific time interval will set its start hour</li>
+                </ul>
+            </div>
+        </div>
+        <div class="center">
+            <div class="actions right"><a href="#" class="button button-rounded button-flat-primary" onclick="$('#help').hide()">Close</a></div>
+        </div>
+    </div>
+    
     <script>
     // ----- Modify if needed ------
     var PROXY = "https://rww.io/proxy?uri={uri}";

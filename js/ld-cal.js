@@ -284,7 +284,7 @@ function render(events) {
 		height: 600,
 		selectable: true,
 		selectHelper: true,
-        eventClick: function(calEvent, jsEvent, view) {
+        eventClick: function(calEvent, jsEvent, view) { // for existing events
             clearFields();
             $('#id').val(calEvent.id);
             
@@ -326,28 +326,29 @@ function render(events) {
             showEditor(jsEvent);
             $('#title').focus();
 		},
-		select: function(start, end, allDay, jsEvent) {
+		select: function(start, end, allDay, jsEvent) { // for new events
 		    clearFields();
             setColor();
             startDay = $.fullCalendar.formatDate(start, 'ddd, MMMM dd yyyy');
             endDay = $.fullCalendar.formatDate(end, 'ddd, MMMM dd yyyy');
 
-            // date picker
+            // setting the values for date picker
             var $pickerStart = $('#pickerStart').pickadate();
             var ps = $pickerStart.pickadate('picker').set('select', $.fullCalendar.parseDate(start));
             var $pickerEnd = $('#pickerEnd').pickadate();
             var pe = $pickerEnd.pickadate('picker').set('select', $.fullCalendar.parseDate(end));
 
-            // time
+            // hour:minutes
             var startHour = $.fullCalendar.formatDate(start, 'HH:mm');
-            if (allDay == true || !end) {
-                var hour = parseInt(startHour.slice(0, startHour.indexOf(':')))+1;
-                var mins = parseInt(startHour.slice(startHour.indexOf(':'), startHour.length));
-                endHour = hour+':'+mins;
-            } else {
-                var endHour = $.fullCalendar.formatDate(end, 'HH:mm');
+            var endHour = $.fullCalendar.formatDate(end, 'HH:mm');
+
+            // set default start/end hours
+            if (startHour == '00:00') {
+                startHour = '10:00';
+                endHour = '11:00';
             }
-                        
+            
+            // time selector
             $('#timepicker').html('');
             $('#timepicker').append('<span class="span-left cell inline-block">Event time</span>'+
                             '<div class="left cell inline-block">'+timeSelector('startHour', startHour)+'</div>');
@@ -409,6 +410,7 @@ $(document).bind('keydown', function(e) {
     if (e.keyCode == 27) { // ESC
         $('#editevent').hide();
         $('#registration').hide();
+        $('#help').hide();
     }
 });
 
