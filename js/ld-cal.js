@@ -280,6 +280,8 @@ function render(events) {
 			center: 'title',
 			right: 'month,agendaWeek,agendaDay'
 		},
+		firstDay: 1,
+		height: 600,
 		selectable: true,
 		selectHelper: true,
         eventClick: function(calEvent, jsEvent, view) {
@@ -509,16 +511,13 @@ function registerTriples() {
 
 // dirty hack to get the User header for login
 function authenticate(uri) {
-    console.log(uri);
-    $.ajax({
+    new $.ajax({
         type: 'HEAD',
         url: uri,
         crossDomain: true,
         complete: function(request, textStatus) {
             // check if the user is authenticated
             user = request.getResponseHeader('User');
-            console.log(request.getAllResponseHeaders());
-            console.log(request);
             if ((user) && (user.slice(0, 4) == 'http')) {
                 mywebid = user;
                 userInfo(user);
