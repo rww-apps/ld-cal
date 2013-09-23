@@ -474,7 +474,7 @@ function updateHour(){
 }
 
 function escapeHtml(html) {
-    return html.replace(/</g, '&lt;').replace(/\>/g, '&gt;');
+    return html.replace(/\</g, '&lt;').replace(/\>/g, '&gt;');
 }
 
 function registerTriples() {
@@ -505,8 +505,7 @@ function registerTriples() {
             $rdf.lit('Simple Linked Data calendar with agenda.'));
             
     var data = new $rdf.Serializer(g).toN3(g);
-        
-    var html = '<textarea>'+data+'</textarea>';
+    var html = '<textarea>'+escapeHtml(data)+'</textarea>';
     
     $('#triples').html(html);
 }
