@@ -1,11 +1,5 @@
 #!/bin/sh
 
-read -p "Please provide the source dir (you can use . for current dir): " BASE
-if [ "$BASE" = "" ]
-then
-    read -p "Please provide the source dir (you can use . for current dir): " BASE
-fi
-
 read -p "Please provide the URI of the target dir (ex: http://example.org/apps/myapp/): " HOST
 if [ "$HOST" = "" ]
 then
@@ -14,7 +8,6 @@ fi
 
 # add trailing slash to target dir if not present
 if [ `echo "$HOST" | grep "[^/]$"` ]; then HOST="$HOST/"; fi
-
 
 # create the dir structure
 for dir in `find . -mindepth 1 -type d | sed "s|^\./||"`:
