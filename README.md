@@ -18,4 +18,6 @@ Installation
 
 Simply copy the files to a public directory that is accessible by your Web server. You can basically host it anywhere, without worrying about server configuration.
 
-Alternatively, you can use the ``deploy.sh`` script, providing the URI of the remote directory where the app will be located. For example, if you have write access to ``http://example.org/apps/``, then you can use ``http://example.org/apps/ld-cal/`` as a viable URI.
+Alternatively, if you do not have direct access to the Web server, you can use the ``deploy.sh`` script which will PUT the local files to the remote server.
+
+To do so, you need to provide the URI of the remote directory where the app will be located, and optionally, a client certificate. For example, if you have write access to ``http://example.org/apps/``, then you can use ``http://example.org/apps/ld-cal/`` as a viable URI.
