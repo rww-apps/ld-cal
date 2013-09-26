@@ -168,7 +168,11 @@ function saveEvent (path) {
     // finally write the data remotely
     putRemote(storageURI, data);
 
-    $('#calendar').fullCalendar('renderEvent', event, true)
+    // if updating, first we clear event from calendar in case it exists
+    if (exists)
+        $('#calendar').fullCalendar('removeEvents', [id]);
+
+    $('#calendar').fullCalendar('renderEvent', event)
     $('#calendar').fullCalendar('unselect');
 }
 
@@ -480,6 +484,7 @@ function registerTriples() {
             $rdf.lit('Simple Linked Data calendar with agenda.'));
             
     var data = new $rdf.Serializer(g).toN3(g);
+    console.log(data);
     var html = '<textarea>'+escapeHtml(data)+'</textarea>';
     
     $('#triples').html(html);
