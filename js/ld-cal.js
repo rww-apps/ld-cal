@@ -110,19 +110,7 @@ function saveEvent (path) {
     var ps = $pickerStart.pickadate('picker').get('highlight');
     var $pickerEnd = $('#pickerEnd').pickadate();
     var pe = $pickerEnd.pickadate('picker').get('highlight');
-    // DEBUG
-    /*
-    console.log(mywebid);
-    console.log('id='+$('#id').val());
-    console.log('allDay='+$('#allDay').prop('checked'));
-    console.log('startDay='+ps.pick);
-    console.log('endDay='+pe.pick);
-    console.log('startHour='+$('#startHour').val());
-    console.log('endHour='+$('#endHour').val());
-    console.log('title='+$('#title').val());
-    console.log('color='+$('#checkedImg').attr('alt'));
-    */
-    // end DEBUG
+
     var id = $('#id').val();
     var title = $('#title').val();    
     var color = $('#checkedImg').attr('alt');
@@ -163,7 +151,7 @@ function saveEvent (path) {
             color: (color)?color:undefined,
             maker: (mywebid)?mywebid:undefined
         };
-    console.log(event);
+
     // save event locally
     if (exists) {
         for (var i in calEvents) {
@@ -180,11 +168,8 @@ function saveEvent (path) {
     // finally write the data remotely
     putRemote(storageURI, data);
 
-    // redraw the calendar
-    var view = $('#calendar').fullCalendar('getView');
-    $('#calendar').fullCalendar('destroy');
-    render(calEvents);
-    $('#calendar').fullCalendar('changeView', view.name);
+    $('#calendar').fullCalendar('renderEvent', event, true)
+    $('#calendar').fullCalendar('unselect');
 }
 
 function eventsToRDF() {
@@ -236,12 +221,6 @@ function updateEvent(event) {
 
     // finally write the data remotely
     putRemote(storageURI, data);
-
-    // redraw the calendar
-    var view = $('#calendar').fullCalendar('getView');
-    $('#calendar').fullCalendar('destroy');
-    render(calEvents);
-    $('#calendar').fullCalendar('changeView', view.name);
 }
 
 function deleteEvent() {
@@ -264,10 +243,6 @@ function deleteEvent() {
     // finally write the data remotely
     putRemote(storageURI, data);
 
-    // redraw the calendar
-    $('#calendar').empty();
-    render(calEvents);
-    
     return;
 }
 
@@ -474,7 +449,7 @@ function updateHour(){
 }
 
 function escapeHtml(html) {
-    return html.replace(/\</g, '&lt;').replace(/\>/g, '&gt;');
+    return html.replace(/</g, '&lt;').replace(/\>/g, '&gt;');
 }
 
 function registerTriples() {
