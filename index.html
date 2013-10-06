@@ -32,8 +32,8 @@
     <!-- Event editor -->
     <div id="editevent" class="editevent grey-border" style="display: none;">
         <input type="hidden" name="id" id="id" value="" />
-        <div>  
-            <span class="span-left cell inline-block"><strong>Event name</strong></span>        
+        <div>
+            <span class="span-left cell inline-block"><strong>Event name</strong></span>
             <div class="left cell inline-block"> <input type="text" name="title" id="title" class="text left" autofocus /></div>
         </div>
         <div>
@@ -55,7 +55,7 @@
         <div class="editor-buttons-right">
             <div class="right actions"><a href="#" class="button button-rounded button-flat-caution" onclick="deleteEvent()">Delete</a></div>
         </div>
-        
+
         <div id="colorpicker" class="colorpicker">
             <span class="span-left cell inline-block">Pick a color</span>
             <div class="right inline-block">
@@ -71,7 +71,7 @@
     <div id="registration" class="registration red-border" style="display: none;">
         <div class="left">
             <span><strong>Warning!</strong></span>
-            <span>Could not find the endpoint for your events resource.</span>
+            <span>Could not find your calendar data.</span>
             <span><strong>Are you logged in?</strong></span>
         </div>
         <div class="left">
@@ -110,7 +110,7 @@
         <div class="left">
             <span class="left"><strong>Week view</strong></span>
             <div class="left">
-                <ul>    
+                <ul>
                     <li>dropping the event to the top bar will turn it into a "Full day" event</li>
                     <li>dropping the event back into a specific time interval will set its start hour</li>
                 </ul>
@@ -120,7 +120,7 @@
             <div class="actions right"><a href="#" class="button button-rounded button-flat-primary" onclick="$('#help').hide()">Close</a></div>
         </div>
     </div>
-    
+
     <script>
     // ----- Modify if needed ------
     var PROXY = "https://rww.io/proxy?uri={uri}";

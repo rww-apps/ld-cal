@@ -457,36 +457,36 @@ function escapeHtml(html) {
 }
 
 function registerTriples() {
-    var webapp = $rdf.Namespace("http://ns.rww.io/wapp#");
-    var rdfs = $rdf.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+    var WAPP = $rdf.Namespace("http://ns.rww.io/wapp#");
+    var RDFS = $rdf.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#');
 
     var endpoint = $('#endpoint').val().trim();
     var frag = '#ld-cal';
-    
+
     // prepare graph
     g = $rdf.graph();
 
     // add these triples to the profile document
     g.add($rdf.sym(frag),
-            rdfs('type'),
-            webapp('app'));
+            RDFS('type'),
+            WAPP('app'));
     g.add($rdf.sym(frag),
-            webapp('name'),
+            WAPP('name'),
             $rdf.lit('LD-Cal'));
     g.add($rdf.sym(frag),
-            webapp('serviceId'),
+            WAPP('serviceId'),
             $rdf.sym(appName));
     g.add($rdf.sym(frag),
-            webapp('endpoint'),
+            WAPP('endpoint'),
             $rdf.sym(endpoint));
     g.add($rdf.sym(frag),
-            webapp('description'),
+            WAPP('description'),
             $rdf.lit('Simple Linked Data calendar with agenda.'));
-            
+
     var data = new $rdf.Serializer(g).toN3(g);
     console.log(data);
     var html = '<textarea>'+escapeHtml(data)+'</textarea>';
-    
+
     $('#triples').html(html);
 }
 
@@ -520,30 +520,32 @@ function authenticate(uri) {
         }
     });
 }
-
+var gg;
 // get endpoint location from the user's WebID
 function once_authenticated(webid) {
-    var webapp = $rdf.Namespace("http://ns.rww.io/wapp#");
+    var WAPP = $rdf.Namespace("http://ns.rww.io/wapp#");
+    var RDFS = $rdf.Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#");
     var FOAF = $rdf.Namespace("http://xmlns.com/foaf/0.1/");
     var g = $rdf.graph();
     var f = $rdf.fetcher(g);
     // add CORS proxy
     $rdf.Fetcher.crossSiteProxyTemplate=PROXY;
-    
+
     var docURI = webid.slice(0, webid.indexOf('#'));
     var webidRes = g.sym(webid);
 
     // fetch user data
     f.nowOrWhenFetched(docURI,undefined,function(){
-        var apps = g.statementsMatching(undefined, 
-                    $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), 
-                    webapp('app'), 
+        gg = g;
+        var apps = g.statementsMatching(undefined,
+                    RDFS('type'),
+                    WAPP('app'),
                     $rdf.sym(docURI));
         if (apps.length>0) {
             for (var i in apps) {
                 var app = apps[i]['subject'];
-                var service = g.any(app, webapp('serviceId'));
-                var endpoint = g.any(app, webapp('endpoint'));
+                var service = g.any(app, WAPP('serviceId'));
+                var endpoint = g.any(app, WAPP('endpoint'));
                 // check if the user registered the app
                 if ((service) && (service.value == appName)) {
                     storageURI = endpoint.value;
