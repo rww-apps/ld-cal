@@ -124,7 +124,7 @@
     <script>
     // ----- Modify if needed ------
     var PROXY = "https://rww.io/proxy?uri={uri}";
-    var AUTH_PROVIDER = "https://ld-cal.rww.io/";
+    var AUTH_PROVIDER = "https://ld-cal.rww.io/"; // fallback URI for authentication
 
     // ----- DO NOT MODIFY BELOW -------
     // App name
@@ -137,7 +137,7 @@
 
     // ------------------- UI and initialization ---------------
     $(document).ready(function() {
-        authenticate('/');
+        authenticate("https://"+document.location.host); // try to authenticate locally (force https)
     });
     </script>
 </body>
