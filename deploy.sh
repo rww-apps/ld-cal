@@ -16,13 +16,13 @@ read -p "Please provide the path containing the name of your certificate file, i
 if [ `echo "$HOST" | grep "[^/]$"` ]; then HOST="$HOST/"; fi
 
 # add cert arguments to the curl command
-if [ "$CERT" != "" ]; then CERTCMD="-E $CERT"; fi
+if [ "$CERT" != "" ]; then CERTCMD="-E $CERT";fi
 
 # create the dir structure (using MKCOL to increase interoperabilty)
 for dir in `find . -mindepth 1 -type d ! -path ./.git\* | sed "s|^\./||"`:
 do
     echo "Creating dir: $dir"
-    if [ $dir != ".git" ]; then curl -X 'MKCOL' $CERTCMD $HOST$dir; fi
+    curl -X 'MKCOL' $CERTCMD $HOST$dir
 done
 
 # upload the files now
@@ -32,5 +32,5 @@ do
     if [ ! `echo "$file" | grep "[^:]$"` ]; then file="${file%?}";fi
 
     echo "Uploading file: $HOST$file"
-    curl --upload-file $file $CERTCMD $HOST$filse
+    curl --upload-file $file $CERTCMD $HOST$file
 done
