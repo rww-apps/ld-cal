@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# RWW.IO Web app deployer. Simply run `sh deploy.sh` inside your Web app dir and follow the steps.
+
 CERTCMD=""
 
 # get target URI
