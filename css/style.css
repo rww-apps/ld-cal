@@ -40,8 +40,8 @@ a { text-decoration: underline; vertical-align: top; }
 .top-nav {
     position: relative;
     width: auto;
-    width: 900px;
-    min-width: 900px !important;
+    width: 1024px;
+    min-width: 1024px !important;
     height: 50px;
     margin-bottom: 15px;
     background: #1d2124;
@@ -314,5 +314,4 @@ select {
     position: relative;
     margin-top: 80px;
 }
-
 
