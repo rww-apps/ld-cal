@@ -5,7 +5,7 @@ function clearFields() {
     $('#allDay').prop('checked', false);
 }
 
-dirname = function(path) {
+function dirname (path) {
     return path.replace(/\\/g, '/').replace(/\/[^\/]*\/?$/, '');
 }
 
