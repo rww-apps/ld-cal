@@ -516,7 +516,6 @@ function authenticate(uri) {
                 $('#registration').show();
             }
             // render the calendar
-            console.log('HEAD:'+textStatus);
             if (textStatus == 'error')
                 render();
         }
