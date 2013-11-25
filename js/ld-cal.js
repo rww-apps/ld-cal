@@ -253,7 +253,7 @@ function deleteEvent() {
 // ----- RENDER -------
 function render(events) {
     $('#spinner').show();
-    $('#calendar').remove();
+    $('#calendar').empty();
     var calendar = $('#calendar').fullCalendar({
         header: {
             left: 'prev,next today',
