@@ -3,8 +3,7 @@
  * Docs & License: http://arshaw.com/fullcalendar/
  * (c) 2013 Adam Shaw
  */
- 
- 
+
 body {
 	text-align: center;
 	font-size: 14px;
@@ -20,17 +19,17 @@ body {
 	direction: ltr;
 	text-align: left;
 	}
-	
+
 .fc table {
 	border-collapse: collapse;
 	border-spacing: 0;
 	}
-	
+
 html .fc,
 .fc table {
 	font-size: 1em;
 	}
-	
+
 .fc td,
 .fc th {
 	padding: 0;
