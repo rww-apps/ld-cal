@@ -516,7 +516,7 @@ function authenticate(uri) {
                 $('#registration').show();
             }
             // render the calendar
-            if (textStatus == 'error')
+            if (textStatus != 'success')
                 render();
         }
     });
