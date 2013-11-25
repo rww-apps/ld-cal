@@ -5,7 +5,7 @@ function clearFields() {
     $('#allDay').prop('checked', false);
 }
 
-function dirname (path) {
+dirname = function(path) {
     return path.replace(/\\/g, '/').replace(/\/[^\/]*\/?$/, '');
 }
 
@@ -253,16 +253,16 @@ function deleteEvent() {
 // ----- RENDER -------
 function render(events) {
     $('#spinner').show();
-	var calendar = $('#calendar').fullCalendar({
-		header: {
-			left: 'prev,next today',
-			center: 'title',
-			right: 'month,agendaWeek,agendaDay'
-		},
-		firstDay: 1,
-		height: 600,
-		selectable: true,
-		selectHelper: true,
+    var calendar = $('#calendar').fullCalendar({
+        header: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'month,agendaWeek,agendaDay'
+        },
+        firstDay: 1,
+        height: 600,
+        selectable: true,
+        selectHelper: true,
         eventClick: function(calEvent, jsEvent, view) { // for existing events
             clearFields();
             $('#id').val(calEvent.id);
@@ -304,9 +304,9 @@ function render(events) {
             // show editor
             showEditor(jsEvent);
             $('#title').focus();
-		},
-		select: function(start, end, allDay, jsEvent) { // for new events
-		    clearFields();
+        },
+        select: function(start, end, allDay, jsEvent) { // for new events
+            clearFields();
             setColor();
             startDay = $.fullCalendar.formatDate(start, 'ddd, MMMM dd yyyy');
             endDay = $.fullCalendar.formatDate(end, 'ddd, MMMM dd yyyy');
@@ -341,9 +341,9 @@ function render(events) {
 
             showEditor(jsEvent);
             $('#title').focus();
-		},
-		eventDrop: function(event,dayDelta,minuteDelta,allDay,revertFunc) {
-		    // update after dragging an event
+        },
+        eventDrop: function(event,dayDelta,minuteDelta,allDay,revertFunc) {
+            // update after dragging an event
             if (!confirm("Are you sure about this change?")) {
                 revertFunc();
             } else {
@@ -359,10 +359,10 @@ function render(events) {
             }
 
         },
-		editable: true,
+        editable: true,
         events: events
-	});
-	$('#spinner').hide();
+    });
+    $('#spinner').hide();
 }
 
 // Display the editor dialog
@@ -449,7 +449,7 @@ function updateHour(){
     hour = (hour.toString().length < 2)?'0'+hour:hour.toString();
     var mins = startHour.slice(startHour.indexOf(':'), startHour.length);
     hour = hour+mins;
-	$('#endHour').val(hour);
+    $('#endHour').val(hour);
 }
 
 function escapeHtml(html) {
@@ -457,36 +457,36 @@ function escapeHtml(html) {
 }
 
 function registerTriples() {
-    var WAPP = $rdf.Namespace("http://ns.rww.io/wapp#");
-    var RDFS = $rdf.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+    var webapp = $rdf.Namespace("http://ns.rww.io/wapp#");
+    var rdfs = $rdf.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#');
 
     var endpoint = $('#endpoint').val().trim();
     var frag = '#ld-cal';
-
+    
     // prepare graph
     g = $rdf.graph();
 
     // add these triples to the profile document
     g.add($rdf.sym(frag),
-            RDFS('type'),
-            WAPP('app'));
+            rdfs('type'),
+            webapp('app'));
     g.add($rdf.sym(frag),
-            WAPP('name'),
+            webapp('name'),
             $rdf.lit('LD-Cal'));
     g.add($rdf.sym(frag),
-            WAPP('serviceId'),
+            webapp('serviceId'),
             $rdf.sym(appName));
     g.add($rdf.sym(frag),
-            WAPP('endpoint'),
+            webapp('endpoint'),
             $rdf.sym(endpoint));
     g.add($rdf.sym(frag),
-            WAPP('description'),
+            webapp('description'),
             $rdf.lit('Simple Linked Data calendar with agenda.'));
-
+            
     var data = new $rdf.Serializer(g).toN3(g);
     console.log(data);
     var html = '<textarea>'+escapeHtml(data)+'</textarea>';
-
+    
     $('#triples').html(html);
 }
 
@@ -520,32 +520,30 @@ function authenticate(uri) {
         }
     });
 }
-var gg;
+
 // get endpoint location from the user's WebID
 function once_authenticated(webid) {
-    var WAPP = $rdf.Namespace("http://ns.rww.io/wapp#");
-    var RDFS = $rdf.Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+    var webapp = $rdf.Namespace("http://ns.rww.io/wapp#");
     var FOAF = $rdf.Namespace("http://xmlns.com/foaf/0.1/");
     var g = $rdf.graph();
     var f = $rdf.fetcher(g);
     // add CORS proxy
     $rdf.Fetcher.crossSiteProxyTemplate=PROXY;
-
+    
     var docURI = webid.slice(0, webid.indexOf('#'));
     var webidRes = g.sym(webid);
 
     // fetch user data
     f.nowOrWhenFetched(docURI,undefined,function(){
-        gg = g;
-        var apps = g.statementsMatching(undefined,
-                    RDFS('type'),
-                    WAPP('app'),
+        var apps = g.statementsMatching(undefined, 
+                    $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), 
+                    webapp('app'), 
                     $rdf.sym(docURI));
         if (apps.length>0) {
             for (var i in apps) {
                 var app = apps[i]['subject'];
-                var service = g.any(app, WAPP('serviceId'));
-                var endpoint = g.any(app, WAPP('endpoint'));
+                var service = g.any(app, webapp('serviceId'));
+                var endpoint = g.any(app, webapp('endpoint'));
                 // check if the user registered the app
                 if ((service) && (service.value == appName)) {
                     storageURI = endpoint.value;
@@ -599,7 +597,7 @@ function userInfo (webid) {
         } else {
             pic = pic.value;
         }
-        
+
         // main divs      
         var html = $('<div class="user left">Welcome, <strong>'+name+'</strong></div><div class="user-pic right"><img src="'+pic+'" title="'+name+'" class="login-photo img-border" /></div>');
         $('#me').empty()
