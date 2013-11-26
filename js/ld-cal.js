@@ -21,6 +21,8 @@ function getCalPath(day, granularity, resource) {
     return path;
 }
 
+/// REMOVE
+var test;
 // Load calendar data from user storage
 var calEvents = []; // store all events
 function loadRemote(URI) {
@@ -29,47 +31,52 @@ function loadRemote(URI) {
     var f = $rdf.fetcher(g);
     // add CORS proxy
     $rdf.Fetcher.crossSiteProxyTemplate=PROXY;
-    
+    console.log('blah');
     // fetch user data
     f.nowOrWhenFetched(URI,undefined,function(){
         // get all event IDs
         t = g;
+
         var evs = g.statementsMatching(undefined, 
                     $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), 
                     undefined, 
                     $rdf.sym(URI));
+        console.log('evs='+evs);
+        if (evs != undefined) {
+            for (var e in evs) {
+                var ev = g.statementsMatching(evs[e]['subject']);
+                var EVENTS  = $rdf.Namespace('http://purl.org/NET/c4dm/event.owl#');
+                var TIME = $rdf.Namespace('http://purl.org/NET/c4dm/timeline.owl#');
+                var DC = $rdf.Namespace('http://purl.org/dc/elements/1.1/');
+                var FOAF = $rdf.Namespace('http://xmlns.com/foaf/0.1/');
+                var UI = $rdf.Namespace('http://www.w3.org/ns/ui#');
 
-        for (var e in evs) {
-            var ev = g.statementsMatching(evs[e]['subject']);
-            var EVENTS  = $rdf.Namespace('http://purl.org/NET/c4dm/event.owl#');
-            var TIME = $rdf.Namespace('http://purl.org/NET/c4dm/timeline.owl#');
-            var DC = $rdf.Namespace('http://purl.org/dc/elements/1.1/');
-            var FOAF = $rdf.Namespace('http://xmlns.com/foaf/0.1/');
-            var UI = $rdf.Namespace('http://www.w3.org/ns/ui#');
+                var id = evs[e]['subject']['value'];
+                var start = g.anyStatementMatching(evs[e]['subject'], TIME('start'));
+                var end = g.anyStatementMatching(evs[e]['subject'], TIME('end'))
+                var title = g.anyStatementMatching(evs[e]['subject'], DC('title'));
+                var color = g.anyStatementMatching(evs[e]['subject'], UI('color'));
+                var maker = g.anyStatementMatching(evs[e]['subject'], FOAF('maker'));
+                var allDay = g.anyStatementMatching(evs[e]['subject'], TIME('allDay'))
 
-            var id = evs[e]['subject']['value'];
-            var start = g.anyStatementMatching(evs[e]['subject'], TIME('start'));
-            var end = g.anyStatementMatching(evs[e]['subject'], TIME('end'))
-            var title = g.anyStatementMatching(evs[e]['subject'], DC('title'));
-            var color = g.anyStatementMatching(evs[e]['subject'], UI('color'));
-            var maker = g.anyStatementMatching(evs[e]['subject'], FOAF('maker'));
-            var allDay = g.anyStatementMatching(evs[e]['subject'], TIME('allDay'))
+                var event = {
+                    id: id.slice(id.indexOf('#'), id.length),
+                    start: (start)?$.fullCalendar.parseISO8601(start['object']['value']):undefined,
+                    end: (end)?$.fullCalendar.parseISO8601(end['object']['value']):undefined,
+                    allDay: (allDay)?true:false,
+                    title: (title)?title['object']['value']:undefined,
+                    color: (color)?color['object']['value']:undefined,
+                    maker: (maker)?maker['object']['value']:undefined
+                };
+                calEvents.push(event);
+            }
 
-            var event = {
-                id: id.slice(id.indexOf('#'), id.length),
-                start: (start)?$.fullCalendar.parseISO8601(start['object']['value']):undefined,
-                end: (end)?$.fullCalendar.parseISO8601(end['object']['value']):undefined,
-                allDay: (allDay)?true:false,
-                title: (title)?title['object']['value']:undefined,
-                color: (color)?color['object']['value']:undefined,
-                maker: (maker)?maker['object']['value']:undefined
-            };
-            calEvents.push(event);
+            render(calEvents);
         }
-
-        render(calEvents);
         $('#spinner').hide();
     });
+    test = f;
+
 }
 
 function putRemote(uri, data) {
@@ -569,10 +576,10 @@ function userInfo (webid) {
     var f = $rdf.fetcher(g);
     // add CORS proxy
     $rdf.Fetcher.crossSiteProxyTemplate=PROXY;
-    
+
     var docURI = webid.slice(0, webid.indexOf('#'));
     var webidRes = $rdf.sym(webid);
-    
+
     // fetch user data
     f.nowOrWhenFetched(docURI,undefined,function(){
         // export the user graph
@@ -581,7 +588,7 @@ function userInfo (webid) {
         var name = g.any(webidRes, FOAF('name'));
         var pic = g.any(webidRes, FOAF('img'));
         var depic = g.any(webidRes, FOAF('depiction'));
-       
+
         if (name == undefined)
             name = 'Unknown';
         else
@@ -598,9 +605,9 @@ function userInfo (webid) {
         } else {
             pic = pic.value;
         }
-        
+
         // main divs      
-        var html = $('<div class="user left">Welcome, <strong>'+name+'</strong></div><div class="user-pic right"><img src="'+pic+'" title="'+name+'" class="login-photo img-border" /></div>');
+        var html = $('<div class="user left">Welcome, <strong><a href="'+webid+'" target="_blank">'+name+'</a></strong></div><div class="user-pic right"><img src="'+pic+'" title="'+name+'" class="login-photo img-border" /></div>');
         $('#me').empty()
         $('#me').html(html);
     });
