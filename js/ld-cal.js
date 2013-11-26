@@ -17,7 +17,6 @@ function getCalPath(day, granularity, resource) {
             dirname(window.location.pathname);
 
     path += (granularity)?$.fullCalendar.formatDate(day, granularity)+resource:'/'+resource;
-    
     return path;
 }
 
@@ -37,9 +36,9 @@ function loadRemote(URI) {
         // get all event IDs
         t = g;
 
-        var evs = g.statementsMatching(undefined, 
-                    $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), 
-                    undefined, 
+        var evs = g.statementsMatching(undefined,
+                    $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+                    undefined,
                     $rdf.sym(URI));
         console.log('evs='+evs);
         if (evs != undefined) {
@@ -111,7 +110,7 @@ function putRemote(uri, data) {
 
 // Save calendar data to user storage
 function saveEvent (path) {
-    $('#editevent').hide(); 
+    $('#editevent').hide();
     // date picker
     var $pickerStart = $('#pickerStart').pickadate();
     var ps = $pickerStart.pickadate('picker').get('highlight');
@@ -119,7 +118,7 @@ function saveEvent (path) {
     var pe = $pickerEnd.pickadate('picker').get('highlight');
 
     var id = $('#id').val();
-    var title = $('#title').val();    
+    var title = $('#title').val();
     var color = $('#checkedImg').attr('alt');
     var allDay = $('#allDay').prop('checked');
 
@@ -127,7 +126,7 @@ function saveEvent (path) {
     var hourS = parseInt(start.slice(0, start.indexOf(':'))) * 60;
     var minsS = parseInt(start.slice(start.indexOf(':')+1, start.length));
     var startHour = parseInt((hourS + minsS) * 60000);
-    
+
     var end = $('#endHour').val();
     var hourE = parseInt(end.slice(0, end.indexOf(':'))) * 60;
     var minsE = parseInt(end.slice(end.indexOf(':')+1, end.length));
@@ -148,7 +147,7 @@ function saveEvent (path) {
         var blob = title+color+allDay+startHour+endHour+startDay+endDay;
         id = '#'+hex_sha1(blob);
     }
-    
+
     var event = {
             id: id,
             start: (startDay)?startDay:undefined,
@@ -194,8 +193,8 @@ function eventsToRDF() {
     g = $rdf.graph();
 
     for (var i in calEvents) {
-        var event = calEvents[i];     
-        
+        var event = calEvents[i];
+
         // set triples
         g.add($rdf.sym(event['id']),
                 RDF('type'),
@@ -236,7 +235,7 @@ function updateEvent(event) {
 
 function deleteEvent() {
     var id = $('#id').val();
-    
+
     // hide UI
     $('#editevent').hide()
 
@@ -260,7 +259,6 @@ function deleteEvent() {
 // ----- RENDER -------
 function render(events) {
     $('#spinner').show();
-    //$('#calendar').empty();
 	var calendar = $('#calendar').fullCalendar({
 		header: {
 			left: 'prev,next today',
@@ -274,10 +272,10 @@ function render(events) {
         eventClick: function(calEvent, jsEvent, view) { // for existing events
             clearFields();
             $('#id').val(calEvent.id);
-            
+
             var startDay = $.fullCalendar.formatDate(calEvent.start, 'ddd, MMMM dd yyyy');
-            var endDay = (!calEvent.end)?$.fullCalendar.formatDate(calEvent.start, 'ddd, MMMM dd yyyy'):$.fullCalendar.formatDate(calEvent.end, 'ddd, MMMM dd yyyy');    
-            
+            var endDay = (!calEvent.end)?$.fullCalendar.formatDate(calEvent.start, 'ddd, MMMM dd yyyy'):$.fullCalendar.formatDate(calEvent.end, 'ddd, MMMM dd yyyy');
+
             // date picker
             var $pickerStart = $('#pickerStart').pickadate();
             var ps = $pickerStart.pickadate('picker').set('select', $.fullCalendar.parseDate(startDay));
@@ -334,7 +332,7 @@ function render(events) {
                 startHour = '10:00';
                 endHour = '11:00';
             }
-            
+
             // time selector
             $('#timepicker').html('');
             $('#timepicker').append('<span class="span-left cell inline-block">Event time</span>'+
@@ -380,7 +378,7 @@ function showEditor(e) {
     var bottomOfViewport = $(window).scrollTop() + $(window).height();
     var bottomOfBox = e.pageY + $('#editevent').height();
     if ( bottomOfViewport <= bottomOfBox )
-        var topVal = bottomOfViewport - 50 - $('#editevent').height();    
+        var topVal = bottomOfViewport - 50 - $('#editevent').height();
     else
         var topVal = e.clientY-50;
     var leftVal = e.clientX-200;
@@ -470,7 +468,7 @@ function registerTriples() {
 
     var endpoint = $('#endpoint').val().trim();
     var frag = '#ld-cal';
-    
+
     // prepare graph
     g = $rdf.graph();
 
@@ -490,11 +488,11 @@ function registerTriples() {
     g.add($rdf.sym(frag),
             webapp('description'),
             $rdf.lit('Simple Linked Data calendar with agenda.'));
-            
+
     var data = new $rdf.Serializer(g).toN3(g);
     console.log(data);
     var html = '<textarea>'+escapeHtml(data)+'</textarea>';
-    
+
     $('#triples').html(html);
 }
 
@@ -537,7 +535,7 @@ function once_authenticated(webid) {
     var f = $rdf.fetcher(g);
     // add CORS proxy
     $rdf.Fetcher.crossSiteProxyTemplate=PROXY;
-    
+
     var docURI = webid.slice(0, webid.indexOf('#'));
     var webidRes = g.sym(webid);
 
@@ -557,6 +555,7 @@ function once_authenticated(webid) {
                     storageURI = endpoint.value;
                     loadRemote(storageURI);
                     $('#registration').hide()
+                    $('#calendar').empty();
                     return true;
                 }
             }

@@ -296,6 +296,8 @@ select {
     height: 30px;
 }
 
+#me a { color: white; }
+
 #title { float: left; }
 
 #mask {
