@@ -36,20 +36,21 @@ function loadRemote(URI) {
         // get all event IDs
         t = g;
 
+        var EVENTS  = $rdf.Namespace('http://purl.org/NET/c4dm/event.owl#');
+        var TIME = $rdf.Namespace('http://purl.org/NET/c4dm/timeline.owl#');
+        var DC = $rdf.Namespace('http://purl.org/dc/elements/1.1/');
+        var FOAF = $rdf.Namespace('http://xmlns.com/foaf/0.1/');
+        var UI = $rdf.Namespace('http://www.w3.org/ns/ui#');
+        var RDF = $rdf.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+
         var evs = g.statementsMatching(undefined,
-                    $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-                    undefined,
-                    $rdf.sym(URI));
+            RDF('type'),
+            EVENTS('Event'),
+            $rdf.sym(URI));
+
         console.log('evs='+evs);
         if (evs != undefined) {
             for (var e in evs) {
-                var ev = g.statementsMatching(evs[e]['subject']);
-                var EVENTS  = $rdf.Namespace('http://purl.org/NET/c4dm/event.owl#');
-                var TIME = $rdf.Namespace('http://purl.org/NET/c4dm/timeline.owl#');
-                var DC = $rdf.Namespace('http://purl.org/dc/elements/1.1/');
-                var FOAF = $rdf.Namespace('http://xmlns.com/foaf/0.1/');
-                var UI = $rdf.Namespace('http://www.w3.org/ns/ui#');
-
                 var id = evs[e]['subject']['value'];
                 var start = g.anyStatementMatching(evs[e]['subject'], TIME('start'));
                 var end = g.anyStatementMatching(evs[e]['subject'], TIME('end'))
