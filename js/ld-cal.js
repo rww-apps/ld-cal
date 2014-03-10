@@ -503,6 +503,7 @@ function authenticate(uri) {
         type: 'HEAD',
         url: uri,
         crossDomain: true,
+        withCredentials: true,
         complete: function(request, textStatus) {
             // check if the user is authenticated
             user = request.getResponseHeader('User');
