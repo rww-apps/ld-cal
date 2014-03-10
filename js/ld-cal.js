@@ -29,8 +29,7 @@ function loadRemote(URI) {
     var g = $rdf.graph();
     var f = $rdf.fetcher(g);
     // add CORS proxy
-    $rdf.Fetcher.crossSiteProxyTemplate=PROXY;
-    console.log('blah');
+    $rdf.Fetcher.crossSiteProxyTemplate=PROXY;    
     // fetch user data
     f.nowOrWhenFetched(URI,undefined,function(){
         // get all event IDs
@@ -48,7 +47,6 @@ function loadRemote(URI) {
             EVENTS('Event'),
             $rdf.sym(URI));
 
-        console.log('evs='+evs);
         if (evs != undefined) {
             for (var e in evs) {
                 var id = evs[e]['subject']['value'];
@@ -503,7 +501,9 @@ function authenticate(uri) {
         type: 'HEAD',
         url: uri,
         crossDomain: true,
-        withCredentials: true,
+        xhrFields: {
+            withCredentials: true
+        },
         complete: function(request, textStatus) {
             // check if the user is authenticated
             user = request.getResponseHeader('User');
